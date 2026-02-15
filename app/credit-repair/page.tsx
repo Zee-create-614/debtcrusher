@@ -122,6 +122,27 @@ export default function CreditRepairPage() {
         return;
       }
 
+      // Track analysis completion
+      try {
+        await fetch("/api/analytics/track", {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({
+            event: "analysis_complete",
+            data: {
+              type: "credit",
+              state: state || "Unknown",
+              mode: mode,
+              itemsCount: mode === "describe" ? items.filter(i => i.accountName.trim()).length : 1,
+              totalBalance: mode === "describe" ? items.reduce((sum, i) => sum + (parseFloat(i.balance) || 0), 0) : 0
+            },
+            timestamp: new Date().toISOString()
+          })
+        });
+      } catch (error) {
+        console.error("Failed to track analytics:", error);
+      }
+
       sessionStorage.setItem("creditRepairResults", JSON.stringify(data));
       router.push("/credit-repair/results");
     } catch {

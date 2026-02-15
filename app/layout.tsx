@@ -98,6 +98,9 @@ export default function RootLayout({
                 <p className="text-gray-400 text-sm">
                   © 2026 DebtCrusher.ai. All rights reserved.
                 </p>
+                <div className="mt-2">
+                  <a href="/admin" className="text-gray-600 hover:text-gray-400 text-xs transition-colors">Admin</a>
+                </div>
               </div>
             </div>
           </footer>

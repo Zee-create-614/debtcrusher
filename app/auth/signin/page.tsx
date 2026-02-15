@@ -51,6 +51,24 @@ function SignInInner() {
       if (result?.error) {
         setError('Sign in failed. Please try again.')
       } else {
+        // Track user signup/signin
+        try {
+          await fetch("/api/analytics/track", {
+            method: "POST",
+            headers: { "Content-Type": "application/json" },
+            body: JSON.stringify({
+              event: "user_signup",
+              data: {
+                email: email,
+                method: "email-only"
+              },
+              timestamp: new Date().toISOString()
+            })
+          });
+        } catch (error) {
+          console.error("Failed to track analytics:", error);
+        }
+
         router.push(callbackUrl)
       }
     } catch (err) {

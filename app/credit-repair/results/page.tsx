@@ -158,6 +158,24 @@ export default function CreditRepairResultsPage() {
 
   const handleUnlockLetters = async () => {
     try {
+      // Track credit letters unlock intent
+      try {
+        await fetch("/api/analytics/track", {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({
+            event: "credit_letters_unlock_intent",
+            data: {
+              itemsCount: results?.total_disputable || 0,
+              estimatedScoreImprovement: results?.estimated_total_score_improvement || 0
+            },
+            timestamp: new Date().toISOString()
+          })
+        });
+      } catch (error) {
+        console.error("Failed to track analytics:", error);
+      }
+
       const response = await fetch('/api/checkout', {
         method: 'POST',
         headers: {
@@ -167,7 +185,7 @@ export default function CreditRepairResultsPage() {
           product: 'credit_repair_unlock',
           amount: 799, // $7.99 in cents
           description: 'Credit Repair Dispute Letters - DebtCrusher.ai',
-          successUrl: `${window.location.origin}/checkout/success`,
+          successUrl: `${window.location.origin}/checkout/success?type=letters`,
           cancelUrl: `${window.location.origin}/checkout/cancel`,
         }),
       });

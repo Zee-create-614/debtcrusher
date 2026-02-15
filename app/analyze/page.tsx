@@ -73,6 +73,29 @@ export default function AnalyzePage() {
         alert(`Analysis error: ${data.error}`);
         return;
       }
+
+      // Track analysis completion
+      try {
+        await fetch("/api/analytics/track", {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({
+            event: "analysis_complete",
+            data: {
+              type: "bill",
+              debtType: mode === "describe" ? debtType : "Unknown",
+              amount: mode === "describe" ? parseFloat(amount) || 0 : 0,
+              state: mode === "describe" ? state : "Unknown",
+              savingsFound: data.savings_found || 0,
+              mode: mode
+            },
+            timestamp: new Date().toISOString()
+          })
+        });
+      } catch (error) {
+        console.error("Failed to track analytics:", error);
+      }
+
       sessionStorage.setItem("analysisResults", JSON.stringify(data));
       router.push("/results");
     } catch {

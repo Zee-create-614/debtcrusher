@@ -170,6 +170,25 @@ export default function ResultsPage() {
 
   const handleUnlockScript = async () => {
     try {
+      // Track script unlock intent
+      try {
+        await fetch("/api/analytics/track", {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({
+            event: "script_unlock_intent",
+            data: {
+              amount: results?.amount || 0,
+              debtType: results?.debtType || 'Unknown',
+              savings: results?.summary.totalSavings || 0
+            },
+            timestamp: new Date().toISOString()
+          })
+        });
+      } catch (error) {
+        console.error("Failed to track analytics:", error);
+      }
+
       const response = await fetch('/api/checkout', {
         method: 'POST',
         headers: {
@@ -179,7 +198,7 @@ export default function ResultsPage() {
           product: 'script_unlock',
           amount: 799, // $7.99 in cents
           description: 'Debt Negotiation Script - DebtCrusher.ai',
-          successUrl: `${window.location.origin}/checkout/success`,
+          successUrl: `${window.location.origin}/checkout/success?type=script`,
           cancelUrl: `${window.location.origin}/checkout/cancel`,
         }),
       });

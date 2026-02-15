@@ -33,10 +33,33 @@ export async function POST(request: NextRequest) {
           timestamp: new Date().toISOString(),
         });
 
-        // TODO: Add fulfillment logic here later
+        // Track payment completion
+        try {
+          const analyticsResponse = await fetch(`${process.env.NEXT_PUBLIC_BASE_URL || 'http://localhost:3000'}/api/analytics/track`, {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({
+              event: 'payment_complete',
+              data: {
+                sessionId: session.id,
+                email: session.customer_details?.email,
+                amount: session.amount_total ? (session.amount_total / 100).toString() : '0',
+                product: session.metadata?.product || 'unknown'
+              },
+              timestamp: new Date().toISOString()
+            })
+          });
+          
+          if (!analyticsResponse.ok) {
+            console.error('Failed to track payment analytics');
+          }
+        } catch (error) {
+          console.error('Error tracking payment analytics:', error);
+        }
+
+        // TODO: Add other fulfillment logic here later
         // - Update user's purchased features in database
         // - Send confirmation email
-        // - Track analytics event
         
         break;
 

@@ -77,6 +77,26 @@ export default function SendLetterModal({ isOpen, onClose, letterContent, letter
       setTrackingInfo(data);
       setStep("success");
       onSent?.(letterTitle);
+
+      // Track letter sent
+      try {
+        await fetch("/api/analytics/track", {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({
+            event: "letter_sent",
+            data: {
+              type: letterTitle,
+              status: "sent",
+              letterId: data.id,
+              trackingNumber: data.tracking_number
+            },
+            timestamp: new Date().toISOString()
+          })
+        });
+      } catch (error) {
+        console.error("Failed to track analytics:", error);
+      }
     } catch {
       setErrorMsg("Network error. Please try again.");
       setStep("error");
