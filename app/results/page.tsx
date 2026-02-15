@@ -2,6 +2,7 @@
 
 import { useEffect, useState } from "react";
 import LetterPreview from "../components/LetterPreview";
+import SendLetterModal from "../components/SendLetterModal";
 
 interface LineItem {
   code: string;
@@ -50,10 +51,49 @@ interface AnalysisResult {
   debtType: string;
   creditor: string;
   amount: number;
+  collectorAddress?: string;
+}
+
+const BUREAU_ADDRESSES: Record<string, { name: string; address: string; city: string; state: string; zip: string }> = {
+  equifax: { name: "Equifax", address: "P.O. Box 740256", city: "Atlanta", state: "GA", zip: "30374" },
+  experian: { name: "Experian", address: "P.O. Box 4500", city: "Allen", state: "TX", zip: "75013" },
+  transunion: { name: "TransUnion", address: "P.O. Box 2000", city: "Chester", state: "PA", zip: "19016" },
+};
+
+type LetterKey = "dispute" | "validation" | "settlement" | "equifax" | "experian" | "transunion";
+
+interface LetterInfo {
+  key: LetterKey;
+  title: string;
+  content: string;
+  icon: string;
+  prefillTo?: { name?: string; address?: string; city?: string; state?: string; zip?: string };
+}
+
+function parseCollectorAddress(results: AnalysisResult): { name?: string; address?: string; city?: string; state?: string; zip?: string } | undefined {
+  // Try to extract from creditor field and collectorAddress
+  if (!results.creditor) return undefined;
+  const prefill: { name?: string; address?: string; city?: string; state?: string; zip?: string } = { name: results.creditor };
+  // If the analysis has a collectorAddress field, try to parse it
+  if (results.collectorAddress) {
+    const parts = results.collectorAddress.split(",").map((s) => s.trim());
+    if (parts.length >= 1) prefill.address = parts[0];
+    if (parts.length >= 2) prefill.city = parts[1];
+    if (parts.length >= 3) {
+      const stateZip = parts[2].trim().split(/\s+/);
+      if (stateZip.length >= 1) prefill.state = stateZip[0];
+      if (stateZip.length >= 2) prefill.zip = stateZip[1];
+    }
+  }
+  return prefill;
 }
 
 export default function ResultsPage() {
   const [results, setResults] = useState<AnalysisResult | null>(null);
+  const [sentLetters, setSentLetters] = useState<Set<string>>(new Set());
+  const [modalOpen, setModalOpen] = useState(false);
+  const [activeLetter, setActiveLetter] = useState<LetterInfo | null>(null);
+  const [bulkSending, setBulkSending] = useState(false);
 
   useEffect(() => {
     const stored = sessionStorage.getItem("analysisResults");
@@ -87,6 +127,29 @@ export default function ResultsPage() {
   }
 
   const { summary, lineItems, statuteOfLimitations, fdcpaViolations, letters, negotiationScript, keyFindings } = results;
+
+  const collectorPrefill = parseCollectorAddress(results);
+
+  const allLetters: LetterInfo[] = [
+    { key: "dispute", title: "Dispute Letter", content: letters.dispute, icon: "📝", prefillTo: collectorPrefill },
+    { key: "validation", title: "Debt Validation Letter", content: letters.validation, icon: "✉️", prefillTo: collectorPrefill },
+    { key: "settlement", title: `Settlement Offer ($${summary.settlementAmount.toLocaleString()})`, content: letters.settlement, icon: "🤝", prefillTo: collectorPrefill },
+    { key: "equifax", title: "Credit Dispute — Equifax", content: letters.creditDispute.equifax, icon: "📊", prefillTo: BUREAU_ADDRESSES.equifax },
+    { key: "experian", title: "Credit Dispute — Experian", content: letters.creditDispute.experian, icon: "📊", prefillTo: BUREAU_ADDRESSES.experian },
+    { key: "transunion", title: "Credit Dispute — TransUnion", content: letters.creditDispute.transunion, icon: "📊", prefillTo: BUREAU_ADDRESSES.transunion },
+  ];
+
+  const openSendModal = (letter: LetterInfo) => {
+    setActiveLetter(letter);
+    setModalOpen(true);
+  };
+
+  const handleLetterSent = (letterTitle: string) => {
+    setSentLetters((prev) => new Set([...prev, letterTitle]));
+  };
+
+  const unsentCount = allLetters.filter((l) => !sentLetters.has(l.title)).length;
+  const allSent = unsentCount === 0;
 
   return (
     <div className="min-h-screen py-12">
@@ -222,12 +285,40 @@ export default function ResultsPage() {
         <div className="mb-8">
           <h2 className="text-2xl font-black text-white mb-6">⚔️ Your Defense Arsenal</h2>
           <div className="space-y-3">
-            <LetterPreview title="Dispute Letter" content={letters.dispute} icon="📝" />
-            <LetterPreview title="Debt Validation Letter" content={letters.validation} icon="✉️" />
-            <LetterPreview title={`Settlement Offer ($${summary.settlementAmount.toLocaleString()})`} content={letters.settlement} icon="🤝" />
-            <LetterPreview title="Credit Dispute — Equifax" content={letters.creditDispute.equifax} icon="📊" />
-            <LetterPreview title="Credit Dispute — Experian" content={letters.creditDispute.experian} icon="📊" />
-            <LetterPreview title="Credit Dispute — TransUnion" content={letters.creditDispute.transunion} icon="📊" />
+            {allLetters.map((letter) => (
+              <LetterPreview
+                key={letter.key}
+                title={letter.title}
+                content={letter.content}
+                icon={letter.icon}
+                isSent={sentLetters.has(letter.title)}
+                onSendClick={() => openSendModal(letter)}
+              />
+            ))}
+          </div>
+
+          {/* Send ALL Letters Button */}
+          <div className="mt-6">
+            {allSent ? (
+              <div className="glass rounded-xl p-5 text-center border border-crusher-green/30">
+                <p className="text-crusher-green font-bold text-lg">✅ All Letters Sent!</p>
+                <p className="text-slate-400 text-sm mt-1">Your certified letters are on their way.</p>
+              </div>
+            ) : (
+              <button
+                onClick={() => {
+                  // Open modal for first unsent letter (user sends one at a time)
+                  const firstUnsent = allLetters.find((l) => !sentLetters.has(l.title));
+                  if (firstUnsent) openSendModal(firstUnsent);
+                }}
+                className="w-full bg-gradient-to-r from-crusher-blue to-crusher-green text-white py-4 rounded-xl font-bold text-lg transition-all hover:scale-[1.02] hover:shadow-lg hover:shadow-crusher-blue/25"
+              >
+                📬 Send ALL Letters — $39.99
+                <span className="block text-xs font-normal opacity-80 mt-0.5">
+                  {sentLetters.size}/{allLetters.length} sent • {unsentCount} remaining
+                </span>
+              </button>
+            )}
           </div>
         </div>
 
@@ -254,6 +345,18 @@ export default function ResultsPage() {
           </a>
         </div>
       </div>
+
+      {/* Send Letter Modal */}
+      {activeLetter && (
+        <SendLetterModal
+          isOpen={modalOpen}
+          onClose={() => { setModalOpen(false); setActiveLetter(null); }}
+          letterContent={activeLetter.content}
+          letterTitle={activeLetter.title}
+          prefillTo={activeLetter.prefillTo}
+          onSent={handleLetterSent}
+        />
+      )}
     </div>
   );
 }
