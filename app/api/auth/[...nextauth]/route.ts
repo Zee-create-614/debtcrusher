@@ -1,22 +1,10 @@
 import NextAuth from 'next-auth'
 import type { NextAuthOptions } from 'next-auth'
-import EmailProvider from 'next-auth/providers/email'
 import CredentialsProvider from 'next-auth/providers/credentials'
 
 export const authOptions: NextAuthOptions = {
+  secret: process.env.NEXTAUTH_SECRET || 'debtcrusher-secret-key-change-in-production',
   providers: [
-    // Email provider for magic links (requires SMTP configuration)
-    EmailProvider({
-      server: {
-        host: process.env.EMAIL_SERVER_HOST,
-        port: process.env.EMAIL_SERVER_PORT,
-        auth: {
-          user: process.env.EMAIL_SERVER_USER,
-          pass: process.env.EMAIL_SERVER_PASSWORD,
-        },
-      },
-      from: process.env.EMAIL_FROM || 'noreply@debtcrusher.ai',
-    }),
     // Credentials provider for MVP (no password needed)
     CredentialsProvider({
       id: 'email-only',
