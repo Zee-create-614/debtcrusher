@@ -14,19 +14,19 @@ export default function Home() {
               ⚡ AI-Powered Debt Defense
             </div>
             <h1 className="text-4xl md:text-6xl lg:text-7xl font-black text-white leading-tight mb-6">
-              Crush Your Medical Bills
+              Crush Your Debt.
               <br />
-              <span className="text-crusher-blue">&amp; Collections</span>
+              <span className="text-crusher-blue">Fix Your Credit.</span>
             </h1>
             <p className="text-lg md:text-xl text-slate-400 mb-8 max-w-2xl mx-auto">
-              Our AI finds billing errors, generates dispute letters, and arms you with everything you need to fight back against unfair debt. Average savings: <span className="text-crusher-green font-bold">$2,400</span>.
+              AI-powered bill analysis, collections defense, and credit repair — all in one place. Upload a bill or credit report and our AI does the rest.
             </p>
             <div className="flex flex-col sm:flex-row gap-4 justify-center mb-8">
               <a href="/analyze" className="bg-crusher-blue hover:bg-crusher-blue-dark text-white px-8 py-4 rounded-xl font-bold text-lg transition-all hover:scale-105 animate-pulse-glow">
                 Analyze My Bill Free →
               </a>
-              <a href="#how-it-works" className="bg-slate-800 hover:bg-slate-700 text-white px-8 py-4 rounded-xl font-bold text-lg transition-all hover:scale-105">
-                How It Works
+              <a href="/credit-repair" className="bg-crusher-green hover:bg-green-600 text-white px-8 py-4 rounded-xl font-bold text-lg transition-all hover:scale-105">
+                Fix My Credit Free →
               </a>
             </div>
             <MoneyBackBadge />
@@ -37,9 +37,10 @@ export default function Home() {
       {/* Stats Bar */}
       <section className="py-16 border-y border-slate-800">
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
-          <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
+          <div className="grid grid-cols-1 md:grid-cols-4 gap-6">
             <StatCard value="$200B+" label="Americans overpay annually on medical bills" icon="💸" />
             <StatCard value="80%" label="of medical bills contain errors or overcharges" icon="⚠️" />
+            <StatCard value="79%" label="of credit reports contain at least one error" icon="📊" />
             <StatCard value="$2,400" label="Average savings found by DebtCrusher AI" icon="💰" />
           </div>
         </div>
@@ -79,7 +80,7 @@ export default function Home() {
           <h2 className="text-3xl md:text-4xl font-black text-white text-center mb-16">
             Your Weapons Against Unfair Debt
           </h2>
-          <div className="grid grid-cols-1 lg:grid-cols-2 gap-8">
+          <div className="grid grid-cols-1 lg:grid-cols-3 gap-8">
             {/* Medical Bill Analyzer */}
             <div className="glass rounded-2xl p-8 hover:scale-[1.02] transition-all">
               <span className="text-5xl block mb-4">🏥</span>
@@ -97,34 +98,38 @@ export default function Home() {
               </a>
             </div>
 
+            {/* Credit Repair */}
+            <div className="glass rounded-2xl p-8 hover:scale-[1.02] transition-all border border-crusher-green/20 relative overflow-hidden">
+              <div className="absolute top-4 right-4 bg-crusher-green/20 text-crusher-green text-xs font-bold px-3 py-1 rounded-full">POPULAR</div>
+              <span className="text-5xl block mb-4">📈</span>
+              <h3 className="text-2xl font-black text-white mb-3">Credit Repair</h3>
+              <p className="text-slate-400 mb-6">Upload your credit report and our AI finds every disputable item and generates dispute letters for all 3 bureaus.</p>
+              <ul className="space-y-3 mb-6">
+                {["AI reads your entire credit report", "Identifies every disputable item", "FCRA-compliant dispute letters × 3 bureaus", "Goodwill & pay-for-delete letters", "One-click send via certified mail"].map((f, i) => (
+                  <li key={i} className="flex items-start gap-2 text-sm text-slate-300">
+                    <span className="text-crusher-green">✓</span>{f}
+                  </li>
+                ))}
+              </ul>
+              <a href="/credit-repair" className="inline-block bg-crusher-green hover:bg-green-600 text-white px-6 py-3 rounded-xl font-bold transition-all hover:scale-105">
+                Fix My Credit →
+              </a>
+            </div>
+
             {/* Collections Crusher */}
             <div className="glass rounded-2xl p-8 hover:scale-[1.02] transition-all">
               <span className="text-5xl block mb-4">🛡️</span>
               <h3 className="text-2xl font-black text-white mb-3">Collections Crusher</h3>
               <p className="text-slate-400 mb-6">Being contacted by collectors? We arm you with legal defenses, settlement strategies, and violation reports.</p>
               <ul className="space-y-3 mb-6">
-                {["Debt validation letter generation", "Settlement offer calculations (pay 30-50¢ on the dollar)", "FDCPA violation detection", "Statute of limitations checker by state", "Credit bureau dispute letters for all 3 bureaus"].map((f, i) => (
+                {["Debt validation letter generation", "Settlement offer calculations (pay 30-50¢ on the dollar)", "FDCPA violation detection", "Statute of limitations checker by state", "Negotiation scripts + phone guides"].map((f, i) => (
                   <li key={i} className="flex items-start gap-2 text-sm text-slate-300">
-                    <span className="text-crusher-green">✓</span>{f}
+                    <span className="text-amber-400">🛡️</span>{f}
                   </li>
                 ))}
               </ul>
-              <a href="/analyze" className="inline-block bg-crusher-green hover:bg-green-600 text-white px-6 py-3 rounded-xl font-bold transition-all hover:scale-105">
+              <a href="/analyze" className="inline-block bg-amber-500 hover:bg-amber-600 text-white px-6 py-3 rounded-xl font-bold transition-all hover:scale-105">
                 Crush Collections →
-              </a>
-            </div>
-          </div>
-
-          {/* Credit Repair CTA */}
-          <div className="mt-8 glass rounded-2xl p-8 hover:scale-[1.02] transition-all border border-crusher-blue/20">
-            <div className="flex flex-col md:flex-row items-center gap-6">
-              <span className="text-5xl">📈</span>
-              <div className="flex-1 text-center md:text-left">
-                <h3 className="text-2xl font-black text-white mb-2">Credit Repair Analyzer</h3>
-                <p className="text-slate-400">Upload your credit report and our AI identifies every disputable item, generates FCRA-compliant dispute letters for all 3 bureaus, plus goodwill and pay-for-delete letters.</p>
-              </div>
-              <a href="/credit-repair" className="shrink-0 bg-crusher-blue hover:bg-crusher-blue-dark text-white px-6 py-3 rounded-xl font-bold transition-all hover:scale-105">
-                Fix My Credit →
               </a>
             </div>
           </div>
@@ -274,6 +279,7 @@ export default function Home() {
               <h4 className="text-white font-semibold mb-3">Product</h4>
               <ul className="space-y-2 text-sm text-slate-400">
                 <li><a href="/analyze" className="hover:text-white transition-colors">Bill Analyzer</a></li>
+                <li><a href="/credit-repair" className="hover:text-white transition-colors">Credit Repair</a></li>
                 <li><a href="/analyze" className="hover:text-white transition-colors">Collections Crusher</a></li>
                 <li><a href="/pricing" className="hover:text-white transition-colors">Pricing</a></li>
               </ul>
