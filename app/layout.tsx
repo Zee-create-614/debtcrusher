@@ -1,6 +1,8 @@
 import type { Metadata } from "next";
 import "./globals.css";
 import TawkWidget from "./components/TawkWidget";
+import Providers from "./components/Providers";
+import AuthButton from "./components/AuthButton";
 
 export const metadata: Metadata = {
   title: "DebtCrusher.ai — Crush Your Medical Bills & Collections",
@@ -31,33 +33,76 @@ export default function RootLayout({
         <link rel="icon" href="/favicon.ico" />
       </head>
       <body className="antialiased min-h-screen">
-        <nav className="fixed top-0 w-full z-50 glass-strong">
-          <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
-            <div className="flex items-center justify-between h-16">
-              <a href="/" className="flex items-center gap-2">
-                <span className="text-2xl font-black text-crusher-blue">⚡</span>
-                <span className="text-xl font-black text-white">Debt<span className="text-crusher-blue">Crusher</span><span className="text-slate-400 text-sm">.ai</span></span>
-              </a>
-              <div className="hidden md:flex items-center gap-8">
-                <a href="/analyze" className="text-slate-300 hover:text-white transition-colors text-sm font-medium">Analyze Bill</a>
-                <a href="/credit-repair" className="text-slate-300 hover:text-white transition-colors text-sm font-medium">Credit Repair</a>
-                <a href="/verify" className="text-slate-300 hover:text-white transition-colors text-sm font-medium">Verify Results</a>
-                <a href="/pricing" className="text-slate-300 hover:text-white transition-colors text-sm font-medium">Pricing</a>
-                <a href="/about" className="text-slate-300 hover:text-white transition-colors text-sm font-medium">About</a>
-                <a href="/analyze" className="bg-crusher-blue hover:bg-crusher-blue-dark text-white px-5 py-2 rounded-lg font-semibold text-sm transition-all hover:scale-105">
-                  Crush My Bill →
+        <Providers>
+          <nav className="fixed top-0 w-full z-50 glass-strong">
+            <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+              <div className="flex items-center justify-between h-16">
+                <a href="/" className="flex items-center gap-2">
+                  <span className="text-2xl font-black text-crusher-blue">⚡</span>
+                  <span className="text-xl font-black text-white">Debt<span className="text-crusher-blue">Crusher</span><span className="text-slate-400 text-sm">.ai</span></span>
                 </a>
+                <div className="hidden md:flex items-center gap-6">
+                  <a href="/analyze" className="text-slate-300 hover:text-white transition-colors text-sm font-medium">Analyze Bill</a>
+                  <a href="/credit-repair" className="text-slate-300 hover:text-white transition-colors text-sm font-medium">Credit Repair</a>
+                  <a href="/verify" className="text-slate-300 hover:text-white transition-colors text-sm font-medium">Verify Results</a>
+                  <a href="/pricing" className="text-slate-300 hover:text-white transition-colors text-sm font-medium">Pricing</a>
+                  <a href="/about" className="text-slate-300 hover:text-white transition-colors text-sm font-medium">About</a>
+                  <AuthButton />
+                </div>
+                <div className="md:hidden flex items-center gap-2">
+                  <AuthButton />
+                </div>
               </div>
-              <a href="/analyze" className="md:hidden bg-crusher-blue text-white px-4 py-2 rounded-lg font-semibold text-sm">
-                Analyze →
-              </a>
             </div>
-          </div>
-        </nav>
-        <main className="pt-16">
-          {children}
-        </main>
-        <TawkWidget />
+          </nav>
+          <main className="pt-16">
+            {children}
+          </main>
+          <footer className="bg-gray-900 border-t border-gray-800 py-12">
+            <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+              <div className="grid grid-cols-2 md:grid-cols-4 gap-8">
+                <div>
+                  <h3 className="font-semibold text-white mb-4">Legal</h3>
+                  <ul className="space-y-2">
+                    <li><a href="/terms" className="text-gray-400 hover:text-white text-sm transition-colors">Terms of Service</a></li>
+                    <li><a href="/privacy" className="text-gray-400 hover:text-white text-sm transition-colors">Privacy Policy</a></li>
+                    <li><a href="/disclaimer" className="text-gray-400 hover:text-white text-sm transition-colors">Legal Disclaimer</a></li>
+                  </ul>
+                </div>
+                <div>
+                  <h3 className="font-semibold text-white mb-4">Services</h3>
+                  <ul className="space-y-2">
+                    <li><a href="/analyze" className="text-gray-400 hover:text-white text-sm transition-colors">Medical Bill Analysis</a></li>
+                    <li><a href="/credit-repair" className="text-gray-400 hover:text-white text-sm transition-colors">Credit Repair</a></li>
+                    <li><a href="/verify" className="text-gray-400 hover:text-white text-sm transition-colors">Verify Results</a></li>
+                    <li><a href="/pricing" className="text-gray-400 hover:text-white text-sm transition-colors">Pricing</a></li>
+                  </ul>
+                </div>
+                <div>
+                  <h3 className="font-semibold text-white mb-4">Company</h3>
+                  <ul className="space-y-2">
+                    <li><a href="/about" className="text-gray-400 hover:text-white text-sm transition-colors">About Us</a></li>
+                    <li><a href="mailto:support@debtcrusher.ai" className="text-gray-400 hover:text-white text-sm transition-colors">Contact</a></li>
+                  </ul>
+                </div>
+                <div>
+                  <h3 className="font-semibold text-white mb-4">Connect</h3>
+                  <p className="text-gray-400 text-sm">support@debtcrusher.ai</p>
+                  <p className="text-gray-400 text-xs mt-4">
+                    Educational tools only.<br />
+                    Not legal advice.
+                  </p>
+                </div>
+              </div>
+              <div className="border-t border-gray-800 mt-8 pt-8 text-center">
+                <p className="text-gray-400 text-sm">
+                  © 2026 DebtCrusher.ai. All rights reserved.
+                </p>
+              </div>
+            </div>
+          </footer>
+          <TawkWidget />
+        </Providers>
       </body>
     </html>
   );

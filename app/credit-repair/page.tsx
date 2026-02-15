@@ -3,6 +3,7 @@
 import { useState } from "react";
 import FileUpload from "../components/FileUpload";
 import StateSelector from "../components/StateSelector";
+import AnalysisDisclaimer from "../components/AnalysisDisclaimer";
 import { useRouter } from "next/navigation";
 
 type Mode = "upload" | "paste" | "describe";
@@ -40,6 +41,7 @@ export default function CreditRepairPage() {
   const [loading, setLoading] = useState(false);
   const [loadingStatus, setLoadingStatus] = useState("");
   const [state, setState] = useState("");
+  const [consented, setConsented] = useState(false);
 
   // Upload mode
   const [, setFile] = useState<File | null>(null);
@@ -136,11 +138,11 @@ export default function CreditRepairPage() {
   ];
 
   const canSubmit =
-    mode === "upload"
+    consented && (mode === "upload"
       ? !!imageBase64
       : mode === "paste"
         ? !!pastedText.trim()
-        : items.some((i) => i.accountName.trim());
+        : items.some((i) => i.accountName.trim()));
 
   const accountTypes: AccountType[] = ["Collections", "Late Payment", "Charge-off", "Bankruptcy", "Inquiry", "Other"];
 
@@ -170,6 +172,8 @@ export default function CreditRepairPage() {
             </button>
           ))}
         </div>
+
+        <AnalysisDisclaimer onConsentChange={setConsented} isConsented={consented} />
 
         <div className="glass-strong rounded-2xl p-8 animate-fade-in-up-delay">
           {/* State selector — only for manual/paste modes */}

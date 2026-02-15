@@ -1,6 +1,7 @@
 "use client";
 
 import { useEffect, useState } from "react";
+import { useSession, signIn } from 'next-auth/react';
 import LetterPreview from "../components/LetterPreview";
 import SendLetterModal from "../components/SendLetterModal";
 
@@ -89,12 +90,15 @@ function parseCollectorAddress(results: AnalysisResult): { name?: string; addres
 }
 
 export default function ResultsPage() {
+  const { data: session, status } = useSession();
   const [results, setResults] = useState<AnalysisResult | null>(null);
   const [sentLetters, setSentLetters] = useState<Set<string>>(new Set());
   const [scriptUnlocked, setScriptUnlocked] = useState(false);
   const [modalOpen, setModalOpen] = useState(false);
   const [activeLetter, setActiveLetter] = useState<LetterInfo | null>(null);
   const [bulkSending, setBulkSending] = useState(false);
+  const [showAccountPrompt, setShowAccountPrompt] = useState(false);
+  const [savedToAccount, setSavedToAccount] = useState(false);
 
   useEffect(() => {
     const stored = sessionStorage.getItem("analysisResults");
@@ -106,11 +110,53 @@ export default function ResultsPage() {
           return;
         }
         setResults(parsed);
+
+        // Auto-save if user is logged in
+        if (session?.user?.email) {
+          saveToAccount(parsed);
+        } else {
+          // Show account prompt after 3 seconds if not logged in
+          setTimeout(() => setShowAccountPrompt(true), 3000);
+        }
       } catch {
         setResults(null);
       }
     }
-  }, []);
+  }, [session]);
+
+  const saveToAccount = async (analysisData?: AnalysisResult) => {
+    if (!session?.user?.email) return;
+    
+    const dataToSave = analysisData || results;
+    if (!dataToSave) return;
+
+    try {
+      const response = await fetch('/api/user/analyses', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify({
+          type: 'bill',
+          summary: `Medical bill analysis - $${dataToSave.summary.totalSavings.toLocaleString()} savings found`,
+          savingsFound: dataToSave.summary.totalSavings,
+          itemsDisputed: dataToSave.lineItems.filter(item => item.status !== 'fair').length,
+          results: dataToSave,
+        }),
+      });
+
+      if (response.ok) {
+        setSavedToAccount(true);
+        setShowAccountPrompt(false);
+      }
+    } catch (error) {
+      console.error('Failed to save to account:', error);
+    }
+  };
+
+  const handleCreateAccount = () => {
+    signIn();
+  };
 
   if (!results) {
     return (
@@ -176,6 +222,59 @@ export default function ResultsPage() {
             </div>
           </div>
         </div>
+
+        {/* Account Save Prompt */}
+        {showAccountPrompt && !session?.user && (
+          <div className="glass-strong rounded-2xl p-6 mb-8 border border-green-700/50 animate-fade-in-up">
+            <div className="flex items-start gap-4">
+              <div className="bg-green-900/30 rounded-full p-3 flex-shrink-0">
+                <svg className="w-6 h-6 text-green-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M5 13l4 4L19 7" />
+                </svg>
+              </div>
+              <div className="flex-1">
+                <h3 className="text-lg font-bold text-white mb-2">Save Your Results!</h3>
+                <p className="text-gray-300 text-sm mb-4">
+                  Create a free account to save this analysis, track your disputes, and access all your results later.
+                  We found <strong>${results?.summary.totalSavings.toLocaleString()} in potential savings</strong> — 
+                  don't lose this valuable information!
+                </p>
+                <div className="flex gap-3">
+                  <button
+                    onClick={handleCreateAccount}
+                    className="bg-green-600 hover:bg-green-500 text-white px-4 py-2 rounded-lg font-medium text-sm transition-colors"
+                  >
+                    Create Free Account
+                  </button>
+                  <button
+                    onClick={() => setShowAccountPrompt(false)}
+                    className="bg-gray-600 hover:bg-gray-500 text-white px-4 py-2 rounded-lg font-medium text-sm transition-colors"
+                  >
+                    Maybe Later
+                  </button>
+                </div>
+              </div>
+            </div>
+          </div>
+        )}
+
+        {/* Account Saved Confirmation */}
+        {savedToAccount && session?.user && (
+          <div className="glass rounded-2xl p-4 mb-8 border border-green-700/50 animate-fade-in-up">
+            <div className="flex items-center gap-3">
+              <div className="bg-green-900/30 rounded-full p-2 flex-shrink-0">
+                <svg className="w-4 h-4 text-green-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M5 13l4 4L19 7" />
+                </svg>
+              </div>
+              <div className="flex-1">
+                <p className="text-green-200 text-sm font-medium">
+                  ✅ Analysis saved to your account. <a href="/account" className="text-green-400 hover:text-green-300 underline">View all analyses →</a>
+                </p>
+              </div>
+            </div>
+          </div>
+        )}
 
         {/* AI Summary */}
         {summary.aiSummary && (

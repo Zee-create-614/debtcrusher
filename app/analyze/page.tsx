@@ -3,6 +3,7 @@
 import { useState } from "react";
 import FileUpload from "../components/FileUpload";
 import StateSelector from "../components/StateSelector";
+import AnalysisDisclaimer from "../components/AnalysisDisclaimer";
 import { useRouter } from "next/navigation";
 
 type Mode = "upload" | "text" | "describe";
@@ -12,6 +13,7 @@ export default function AnalyzePage() {
   const router = useRouter();
   const [mode, setMode] = useState<Mode>("upload");
   const [loading, setLoading] = useState(false);
+  const [consented, setConsented] = useState(false);
 
   // Upload mode
   const [, setFile] = useState<File | null>(null);
@@ -115,6 +117,8 @@ export default function AnalyzePage() {
           ))}
         </div>
 
+        <AnalysisDisclaimer onConsentChange={setConsented} isConsented={consented} />
+
         <div className="glass-strong rounded-2xl p-8 animate-fade-in-up-delay">
           {/* Upload Mode */}
           {mode === "upload" && (
@@ -122,7 +126,7 @@ export default function AnalyzePage() {
               <FileUpload onFile={(f, base64, mime) => { setFile(f); setImageBase64(base64); setImageMimeType(mime); }} />
               <button
                 onClick={handleAnalyze}
-                disabled={loading || !imageBase64}
+                disabled={loading || !imageBase64 || !consented}
                 className="w-full bg-crusher-blue hover:bg-crusher-blue-dark disabled:opacity-50 text-white py-4 rounded-xl font-bold text-lg transition-all hover:scale-105"
               >
                 {loading ? `⏳ ${loadingStatus || "Analyzing..."}` : "⚡ Analyze My Bill"}
@@ -145,7 +149,7 @@ export default function AnalyzePage() {
               </div>
               <button
                 onClick={handleAnalyze}
-                disabled={loading || !pastedText.trim()}
+                disabled={loading || !pastedText.trim() || !consented}
                 className="w-full bg-crusher-blue hover:bg-crusher-blue-dark disabled:opacity-50 text-white py-4 rounded-xl font-bold text-lg transition-all hover:scale-105"
               >
                 {loading ? "⏳ Analyzing..." : "⚡ Analyze"}
@@ -234,7 +238,7 @@ export default function AnalyzePage() {
 
               <button
                 onClick={handleAnalyze}
-                disabled={loading || !amount || !state}
+                disabled={loading || !amount || !state || !consented}
                 className="w-full bg-crusher-blue hover:bg-crusher-blue-dark disabled:opacity-50 text-white py-4 rounded-xl font-bold text-lg transition-all hover:scale-105"
               >
                 {loading ? "⏳ Crushing..." : "⚡ Crush This Debt"}
