@@ -42,6 +42,10 @@ export default function AnalyzePage() {
         body: JSON.stringify(body),
       });
       const data = await res.json();
+      if (data.error) {
+        alert(`Analysis error: ${data.error}`);
+        return;
+      }
       sessionStorage.setItem("analysisResults", JSON.stringify(data));
       router.push("/results");
     } catch {

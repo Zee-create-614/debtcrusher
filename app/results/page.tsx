@@ -58,7 +58,16 @@ export default function ResultsPage() {
   useEffect(() => {
     const stored = sessionStorage.getItem("analysisResults");
     if (stored) {
-      setResults(JSON.parse(stored));
+      try {
+        const parsed = JSON.parse(stored);
+        if (parsed.error || !parsed.summary) {
+          setResults(null);
+          return;
+        }
+        setResults(parsed);
+      } catch {
+        setResults(null);
+      }
     }
   }, []);
 
