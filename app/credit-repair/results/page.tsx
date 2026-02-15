@@ -83,6 +83,7 @@ export default function CreditRepairResultsPage() {
   const [modalOpen, setModalOpen] = useState(false);
   const [activeLetter, setActiveLetter] = useState<LetterInfo | null>(null);
   const [expandedItems, setExpandedItems] = useState<Set<number>>(new Set());
+  const [lettersUnlocked, setLettersUnlocked] = useState(false);
 
   useEffect(() => {
     const stored = sessionStorage.getItem("creditRepairResults");
@@ -199,7 +200,7 @@ export default function CreditRepairResultsPage() {
           <p className="text-slate-300 leading-relaxed">{results.summary}</p>
         </div>
 
-        {/* Disputable Items */}
+        {/* Disputable Items — Free Summary */}
         <div className="mb-8">
           <h2 className="text-2xl font-black text-white mb-6 animate-fade-in-up">🎯 Disputable Items</h2>
           <div className="space-y-4">
@@ -208,10 +209,10 @@ export default function CreditRepairResultsPage() {
                 key={idx}
                 className={`glass rounded-2xl overflow-hidden border-l-4 ${typeColors[item.type] || "border-slate-500/40"} animate-fade-in-up`}
               >
-                {/* Item Header */}
+                {/* Item Header — always visible */}
                 <button
-                  onClick={() => toggleItem(idx)}
-                  className="w-full p-5 text-left hover:bg-slate-800/30 transition-colors"
+                  onClick={() => lettersUnlocked ? toggleItem(idx) : undefined}
+                  className={`w-full p-5 text-left ${lettersUnlocked ? "hover:bg-slate-800/30 cursor-pointer" : "cursor-default"} transition-colors`}
                 >
                   <div className="flex items-start justify-between gap-4">
                     <div className="flex-1">
@@ -240,16 +241,17 @@ export default function CreditRepairResultsPage() {
                       </div>
                       <p className="text-slate-400 text-sm mt-2">{item.dispute_reason}</p>
                     </div>
-                    <span className="text-slate-400 text-lg shrink-0">{expandedItems.has(idx) ? "▲" : "▼"}</span>
+                    {lettersUnlocked && (
+                      <span className="text-slate-400 text-lg shrink-0">{expandedItems.has(idx) ? "▲" : "▼"}</span>
+                    )}
                   </div>
                 </button>
 
-                {/* Expanded: Letters */}
-                {expandedItems.has(idx) && (
+                {/* Expanded: Letters — only if unlocked */}
+                {lettersUnlocked && expandedItems.has(idx) && (
                   <div className="px-5 pb-5 space-y-3 border-t border-slate-700/50 pt-4">
                     <h4 className="text-white font-semibold text-sm mb-2">📬 Dispute Letters</h4>
 
-                    {/* Bureau dispute letters */}
                     {(["equifax", "experian", "transunion"] as const).map((bureau) =>
                       item.dispute_letters[bureau] ? (
                         <LetterPreview
@@ -271,7 +273,6 @@ export default function CreditRepairResultsPage() {
                       ) : null
                     )}
 
-                    {/* Goodwill letter */}
                     {item.goodwill_letter && (
                       <LetterPreview
                         title="Goodwill Letter"
@@ -289,7 +290,6 @@ export default function CreditRepairResultsPage() {
                       />
                     )}
 
-                    {/* Pay-for-delete letter */}
                     {item.pay_for_delete_letter && (
                       <LetterPreview
                         title="Pay-for-Delete Letter"
@@ -313,9 +313,27 @@ export default function CreditRepairResultsPage() {
           </div>
         </div>
 
-        {/* Send ALL Disputes */}
+        {/* Unlock Paywall or Send ALL */}
         <div className="mb-8">
-          {allSent ? (
+          {!lettersUnlocked ? (
+            <div className="glass-strong rounded-2xl p-8 text-center border border-crusher-blue/30">
+              <span className="text-5xl block mb-4">🔓</span>
+              <h3 className="text-2xl font-black text-white mb-2">Unlock Your Dispute Letters</h3>
+              <p className="text-slate-400 mb-2">
+                We found <span className="text-crusher-blue font-bold">{results.total_disputable} disputable items</span> that could improve your score by <span className="text-crusher-green font-bold">+{results.estimated_total_score_improvement} points</span>.
+              </p>
+              <p className="text-slate-400 text-sm mb-6">
+                Get all {allLetters.length} dispute letters — FCRA-compliant, personalized, ready to send to Equifax, Experian, and TransUnion.
+              </p>
+              <button
+                onClick={() => setLettersUnlocked(true)}
+                className="bg-crusher-blue hover:bg-crusher-blue-dark text-white px-8 py-4 rounded-xl font-bold text-lg transition-all hover:scale-105 shadow-lg shadow-crusher-blue/25"
+              >
+                🔓 Unlock All Dispute Letters — $7.99
+              </button>
+              <p className="text-slate-500 text-xs mt-3">Includes dispute letters, goodwill letters, and pay-for-delete letters</p>
+            </div>
+          ) : allSent ? (
             <div className="glass rounded-xl p-5 text-center border border-crusher-green/30">
               <p className="text-crusher-green font-bold text-lg">✅ All Letters Sent!</p>
               <p className="text-slate-400 text-sm mt-1">Your certified dispute letters are on their way to the bureaus.</p>
@@ -328,7 +346,7 @@ export default function CreditRepairResultsPage() {
               }}
               className="w-full bg-gradient-to-r from-crusher-blue to-crusher-green text-white py-4 rounded-xl font-bold text-lg transition-all hover:scale-[1.02] hover:shadow-lg hover:shadow-crusher-blue/25"
             >
-              📬 Send ALL Disputes — ${(allLetters.length * 7.99).toFixed(2)}
+              📬 Send ALL Disputes via Certified Mail — $39.99
               <span className="block text-xs font-normal opacity-80 mt-0.5">
                 {sentLetters.size}/{allLetters.length} sent • {unsentCount} remaining • Certified mail to all 3 bureaus
               </span>
@@ -336,8 +354,8 @@ export default function CreditRepairResultsPage() {
           )}
         </div>
 
-        {/* Credit Score Tips */}
-        {results.tips && results.tips.length > 0 && (
+        {/* Credit Score Tips — only after unlock */}
+        {lettersUnlocked && results.tips && results.tips.length > 0 && (
           <div className="glass rounded-2xl p-6 mb-8 border border-crusher-blue/20 animate-fade-in-up">
             <h2 className="text-xl font-bold text-white mb-4">💡 Personalized Credit Score Tips</h2>
             <div className="space-y-3">
