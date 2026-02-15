@@ -114,8 +114,39 @@ export async function POST(request: Request) {
   const client = new Anthropic({ apiKey });
   let reportContent = "";
 
+  // PDF extraction
+  if (input_type === "image" && image_base64 && image_mime_type === "application/pdf") {
+    try {
+      const visionRes = await client.messages.create({
+        model: "claude-sonnet-4-20250514",
+        max_tokens: 4000,
+        messages: [{
+          role: "user",
+          content: [
+            {
+              type: "document",
+              source: { type: "base64", media_type: "application/pdf", data: image_base64 },
+            },
+            {
+              type: "text",
+              text: "Extract ALL information from this credit report. For each account, extract: account/creditor name, account type, balance, status, date opened, last activity date, payment history, and any remarks. Be thorough — include every negative item, collection, late payment, charge-off, inquiry, and derogatory mark you can find.",
+            },
+          ],
+        }],
+      });
+      const visionText = visionRes.content.find((b) => b.type === "text");
+      if (visionText && visionText.type === "text") {
+        reportContent = visionText.text;
+      }
+    } catch (err) {
+      console.error("PDF extraction error:", err);
+      return NextResponse.json(
+        { error: "Failed to read the PDF. Please try uploading screenshots of your credit report instead." },
+        { status: 500 }
+      );
+    }
   // Vision extraction for image uploads
-  if (input_type === "image" && image_base64 && image_mime_type) {
+  } else if (input_type === "image" && image_base64 && image_mime_type) {
     try {
       const visionRes = await client.messages.create({
         model: "claude-sonnet-4-20250514",

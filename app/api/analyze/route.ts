@@ -139,9 +139,40 @@ export async function POST(request: Request) {
     image_base64?: string; image_mime_type?: string;
   };
 
-  // --- Vision: extract bill text from image ---
+  // --- PDF or Vision: extract bill text ---
   let extractedBillText = bill_text || "";
-  if (image_base64 && image_mime_type) {
+  if (image_base64 && image_mime_type === "application/pdf") {
+    try {
+      const client = new Anthropic({ apiKey });
+      const visionRes = await client.messages.create({
+        model: "claude-sonnet-4-20250514",
+        max_tokens: 4000,
+        messages: [{
+          role: "user",
+          content: [
+            {
+              type: "document",
+              source: { type: "base64", media_type: "application/pdf", data: image_base64 },
+            },
+            {
+              type: "text",
+              text: "Extract ALL text, amounts, CPT/procedure codes, creditor/provider info, dates, patient info, account numbers, and line items from this medical bill or collection letter. Be thorough.",
+            },
+          ],
+        }],
+      });
+      const visionText = visionRes.content.find(b => b.type === "text");
+      if (visionText && visionText.type === "text") {
+        extractedBillText = visionText.text;
+      }
+    } catch (err) {
+      console.error("PDF extraction error:", err);
+      return NextResponse.json(
+        { error: "Failed to read the PDF. Please try uploading screenshots of your bill instead." },
+        { status: 500 }
+      );
+    }
+  } else if (image_base64 && image_mime_type) {
     try {
       const client = new Anthropic({ apiKey });
       const visionRes = await client.messages.create({
