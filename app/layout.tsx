@@ -39,6 +39,7 @@ export default function RootLayout({
               </a>
               <div className="hidden md:flex items-center gap-8">
                 <a href="/analyze" className="text-slate-300 hover:text-white transition-colors text-sm font-medium">Analyze Bill</a>
+                <a href="/credit-repair" className="text-slate-300 hover:text-white transition-colors text-sm font-medium">Credit Repair</a>
                 <a href="/pricing" className="text-slate-300 hover:text-white transition-colors text-sm font-medium">Pricing</a>
                 <a href="/about" className="text-slate-300 hover:text-white transition-colors text-sm font-medium">About</a>
                 <a href="/analyze" className="bg-crusher-blue hover:bg-crusher-blue-dark text-white px-5 py-2 rounded-lg font-semibold text-sm transition-all hover:scale-105">

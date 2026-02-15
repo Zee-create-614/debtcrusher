@@ -114,6 +114,20 @@ export default function Home() {
               </a>
             </div>
           </div>
+
+          {/* Credit Repair CTA */}
+          <div className="mt-8 glass rounded-2xl p-8 hover:scale-[1.02] transition-all border border-crusher-blue/20">
+            <div className="flex flex-col md:flex-row items-center gap-6">
+              <span className="text-5xl">📈</span>
+              <div className="flex-1 text-center md:text-left">
+                <h3 className="text-2xl font-black text-white mb-2">Credit Repair Analyzer</h3>
+                <p className="text-slate-400">Upload your credit report and our AI identifies every disputable item, generates FCRA-compliant dispute letters for all 3 bureaus, plus goodwill and pay-for-delete letters.</p>
+              </div>
+              <a href="/credit-repair" className="shrink-0 bg-crusher-blue hover:bg-crusher-blue-dark text-white px-6 py-3 rounded-xl font-bold transition-all hover:scale-105">
+                Fix My Credit →
+              </a>
+            </div>
+          </div>
         </div>
       </section>
 

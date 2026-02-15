@@ -396,6 +396,13 @@ export default function ResultsPage() {
             🔄 Analyze Another Bill
           </a>
         </div>
+
+        {/* Credit Repair CTA */}
+        <div className="mt-6 glass rounded-xl p-5 text-center border border-crusher-blue/20">
+          <a href="/credit-repair" className="text-crusher-blue hover:text-white font-semibold transition-colors">
+            📈 Also need credit repair? Analyze your credit report and generate dispute letters →
+          </a>
+        </div>
       </div>
 
       {/* Send Letter Modal */}
