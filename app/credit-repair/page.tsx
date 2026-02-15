@@ -189,6 +189,7 @@ export default function CreditRepairPage() {
             <div className="space-y-6">
               <p className="text-slate-400 text-sm text-center">Upload a screenshot or PDF of your credit report — our AI reads everything automatically.</p>
               <FileUpload
+                label="Drop your credit report here"
                 onFile={(f, base64, mime) => {
                   setFile(f);
                   setImageBase64(base64);

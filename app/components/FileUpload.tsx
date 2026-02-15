@@ -4,9 +4,10 @@ import { useState, useCallback } from "react";
 
 interface FileUploadProps {
   onFile: (file: File, base64: string, mimeType: string) => void;
+  label?: string;
 }
 
-export default function FileUpload({ onFile }: FileUploadProps) {
+export default function FileUpload({ onFile, label = "Drop your bill here" }: FileUploadProps) {
   const [dragActive, setDragActive] = useState(false);
   const [fileName, setFileName] = useState<string | null>(null);
 
@@ -59,7 +60,7 @@ export default function FileUpload({ onFile }: FileUploadProps) {
       ) : (
         <div>
           <span className="text-4xl block mb-3">📤</span>
-          <p className="text-white font-semibold mb-1">Drop your bill here</p>
+          <p className="text-white font-semibold mb-1">{label}</p>
           <p className="text-slate-400 text-sm">PDF, photo, or screenshot • Max 10MB</p>
         </div>
       )}
