@@ -1,4 +1,5 @@
 import { NextResponse } from 'next/server'
+// @ts-ignore - nodemailer types not installed
 import { createTransport } from 'nodemailer'
 import { encode } from 'next-auth/jwt'
 

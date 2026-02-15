@@ -1,8 +1,7 @@
 import NextAuth from 'next-auth'
 import type { NextAuthOptions } from 'next-auth'
 import CredentialsProvider from 'next-auth/providers/credentials'
-import { createTransport } from 'nodemailer'
-import * as jwt from 'next-auth/jwt'
+import { decode } from 'next-auth/jwt'
 
 // Simple magic link flow:
 // 1. User enters email on /auth/signin
@@ -25,7 +24,7 @@ export const authOptions: NextAuthOptions = {
         try {
           // Verify the magic token
           const secret = process.env.NEXTAUTH_SECRET || 'debtcrusher-secret-key-change-in-production'
-          const decoded = await jwt.decode({ token: credentials.token, secret })
+          const decoded = await decode({ token: credentials.token, secret })
           
           if (decoded?.email === credentials.email && decoded?.purpose === 'magic-link') {
             // Check expiry (15 min)
