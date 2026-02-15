@@ -91,6 +91,7 @@ function parseCollectorAddress(results: AnalysisResult): { name?: string; addres
 export default function ResultsPage() {
   const [results, setResults] = useState<AnalysisResult | null>(null);
   const [sentLetters, setSentLetters] = useState<Set<string>>(new Set());
+  const [scriptUnlocked, setScriptUnlocked] = useState(false);
   const [modalOpen, setModalOpen] = useState(false);
   const [activeLetter, setActiveLetter] = useState<LetterInfo | null>(null);
   const [bulkSending, setBulkSending] = useState(false);
@@ -323,16 +324,67 @@ export default function ResultsPage() {
         </div>
 
         {/* Negotiation Script */}
-        <div className="glass rounded-2xl p-6 mb-8">
-          <h2 className="text-xl font-bold text-white mb-4">📞 Negotiation Script</h2>
-          <div className="space-y-4">
-            {negotiationScript.map((step, i) => (
-              <div key={i} className="flex gap-3 text-sm text-slate-300">
-                <span className="text-crusher-blue font-bold shrink-0">#{i + 1}</span>
-                <p>{step}</p>
-              </div>
-            ))}
+        <div className="glass rounded-2xl p-6 mb-8 border border-crusher-blue/20">
+          <div className="flex items-center justify-between mb-4">
+            <h2 className="text-xl font-bold text-white">📞 Phone Negotiation Script</h2>
+            {!scriptUnlocked && (
+              <span className="text-xs font-bold px-3 py-1 rounded-full bg-crusher-blue/20 text-crusher-blue">$7.99</span>
+            )}
           </div>
+          {scriptUnlocked ? (
+            <>
+              <div className="bg-crusher-green/10 border border-crusher-green/20 rounded-xl p-4 mb-4">
+                <p className="text-crusher-green font-semibold text-sm">💡 Pro Tip: Call during business hours (Tue-Thu mornings work best). Be calm, confident, and stick to the script.</p>
+              </div>
+              <div className="space-y-4">
+                {negotiationScript.map((step, i) => (
+                  <div key={i} className="flex gap-3 text-sm text-slate-300">
+                    <span className="text-crusher-blue font-bold shrink-0">#{i + 1}</span>
+                    <p>{step}</p>
+                  </div>
+                ))}
+              </div>
+              <div className="mt-4 pt-4 border-t border-slate-800">
+                <p className="text-slate-400 text-xs">
+                  🎯 Target settlement: <span className="text-crusher-green font-bold">${summary.settlementAmount.toLocaleString()}</span> ({summary.settlementPercent}% of balance) •
+                  Walk-away max: <span className="text-white font-bold">${Math.round(results.amount * 0.5).toLocaleString()}</span>
+                </p>
+              </div>
+            </>
+          ) : (
+            <>
+              {/* Show teaser — first 2 steps blurred */}
+              <div className="space-y-4 mb-4">
+                {negotiationScript.slice(0, 2).map((step, i) => (
+                  <div key={i} className="flex gap-3 text-sm text-slate-300">
+                    <span className="text-crusher-blue font-bold shrink-0">#{i + 1}</span>
+                    <p>{step}</p>
+                  </div>
+                ))}
+              </div>
+              <div className="relative">
+                <div className="space-y-4 blur-sm select-none pointer-events-none">
+                  {negotiationScript.slice(2, 5).map((step, i) => (
+                    <div key={i} className="flex gap-3 text-sm text-slate-500">
+                      <span className="text-slate-600 font-bold shrink-0">#{i + 3}</span>
+                      <p>{step}</p>
+                    </div>
+                  ))}
+                </div>
+                <div className="absolute inset-0 flex items-center justify-center">
+                  <button
+                    onClick={() => setScriptUnlocked(true)}
+                    className="bg-crusher-blue hover:bg-crusher-blue-dark text-white px-6 py-3 rounded-xl font-bold transition-all hover:scale-105 shadow-lg shadow-crusher-blue/25"
+                  >
+                    🔓 Unlock Full Script — $7.99
+                  </button>
+                </div>
+              </div>
+              <p className="text-slate-500 text-xs mt-4 text-center">
+                {negotiationScript.length} steps • Personalized for your ${results.amount.toLocaleString()} {results.debtType.toLowerCase()} debt • Know exactly what to say
+              </p>
+            </>
+          )}
         </div>
 
         {/* Actions */}
