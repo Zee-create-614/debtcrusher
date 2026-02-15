@@ -15,6 +15,9 @@ export default function AnalyzePage() {
 
   // Upload mode
   const [, setFile] = useState<File | null>(null);
+  const [imageBase64, setImageBase64] = useState<string | null>(null);
+  const [imageMimeType, setImageMimeType] = useState<string | null>(null);
+  const [loadingStatus, setLoadingStatus] = useState("");
 
   // Text mode
   const [pastedText, setPastedText] = useState("");
@@ -30,12 +33,34 @@ export default function AnalyzePage() {
   const handleAnalyze = async () => {
     setLoading(true);
     try {
-      const body = mode === "describe"
-        ? { type: debtType, creditor, amount: parseFloat(amount) || 0, debt_age: debtAge, state, description: details }
-        : mode === "text"
-        ? { type: "Medical" as const, description: pastedText, amount: 0, creditor: "Unknown", state: "OH", debt_age: "<1 year" }
-        : { type: "Medical" as const, description: "Uploaded bill", amount: 0, creditor: "Unknown", state: "OH", debt_age: "<1 year" };
+      let body;
+      if (mode === "describe") {
+        body = { type: debtType, creditor, amount: parseFloat(amount) || 0, debt_age: debtAge, state, description: details };
+      } else if (mode === "text") {
+        body = { type: "Medical" as const, description: pastedText, amount: 0, creditor: "Unknown", state: "OH", debt_age: "<1 year" };
+      } else {
+        if (!imageBase64) {
+          alert("Please upload an image of your bill first.");
+          setLoading(false);
+          return;
+        }
+        setLoadingStatus("📸 Reading your bill...");
+        body = {
+          type: "Medical" as const,
+          description: "Uploaded bill image",
+          amount: 0,
+          creditor: "Unknown",
+          state: "OH",
+          debt_age: "<1 year",
+          image_base64: imageBase64,
+          image_mime_type: imageMimeType,
+        };
+      }
 
+      if (mode === "upload") {
+        // After a brief delay, switch status to analyzing
+        setTimeout(() => setLoadingStatus("🔍 Analyzing your bill..."), 3000);
+      }
       const res = await fetch("/api/analyze", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
@@ -94,13 +119,13 @@ export default function AnalyzePage() {
           {/* Upload Mode */}
           {mode === "upload" && (
             <div className="space-y-6">
-              <FileUpload onFile={(f) => setFile(f)} />
+              <FileUpload onFile={(f, base64, mime) => { setFile(f); setImageBase64(base64); setImageMimeType(mime); }} />
               <button
                 onClick={handleAnalyze}
-                disabled={loading}
+                disabled={loading || !imageBase64}
                 className="w-full bg-crusher-blue hover:bg-crusher-blue-dark disabled:opacity-50 text-white py-4 rounded-xl font-bold text-lg transition-all hover:scale-105"
               >
-                {loading ? "⏳ Analyzing..." : "⚡ Analyze My Bill"}
+                {loading ? `⏳ ${loadingStatus || "Analyzing..."}` : "⚡ Analyze My Bill"}
               </button>
             </div>
           )}

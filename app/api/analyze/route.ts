@@ -133,13 +133,56 @@ export async function POST(request: Request) {
     return NextResponse.json({ error: "Invalid request body." }, { status: 400 });
   }
 
-  const { type, description, amount, creditor, state, debt_age, bill_text } = body as {
+  const { type, description, amount, creditor, state, debt_age, bill_text, image_base64, image_mime_type } = body as {
     type?: string; description?: string; amount?: number; creditor?: string;
     state?: string; debt_age?: string; bill_text?: string;
+    image_base64?: string; image_mime_type?: string;
   };
 
-  if (!type) {
-    return NextResponse.json({ error: "Please specify a debt type (Medical, Collections, Credit Card, etc.)." }, { status: 400 });
+  // --- Vision: extract bill text from image ---
+  let extractedBillText = bill_text || "";
+  if (image_base64 && image_mime_type) {
+    try {
+      const client = new Anthropic({ apiKey });
+      const visionRes = await client.messages.create({
+        model: "claude-sonnet-4-20250514",
+        max_tokens: 4000,
+        messages: [{
+          role: "user",
+          content: [
+            {
+              type: "image",
+              source: {
+                type: "base64",
+                media_type: image_mime_type as "image/jpeg" | "image/png" | "image/gif" | "image/webp",
+                data: image_base64,
+              },
+            },
+            {
+              type: "text",
+              text: "Extract ALL text, amounts, CPT/procedure codes, creditor/provider info, dates, patient info, account numbers, and line items from this medical bill or collection letter. Return the extracted information as structured plain text. Be thorough — include every dollar amount, every line item, every date, and every name/address you can find.",
+            },
+          ],
+        }],
+      });
+      const visionText = visionRes.content.find(b => b.type === "text");
+      if (visionText && visionText.type === "text") {
+        extractedBillText = visionText.text;
+      }
+    } catch (err) {
+      console.error("Vision extraction error:", err);
+      return NextResponse.json(
+        { error: "Failed to read the uploaded image. Please try a clearer photo or use the describe/paste option." },
+        { status: 500 }
+      );
+    }
+  }
+
+  // Infer type from image if not provided
+  const effectiveType = type || "Medical";
+
+  if (!effectiveType && !extractedBillText) {
+    return NextResponse.json({ error: "Please specify a debt type or upload an image." }, { status: 400 });
   }
 
   const debtAmount = amount || 0;
@@ -150,13 +193,13 @@ export async function POST(request: Request) {
   const userMessage = `Please analyze this debt/bill and provide your full analysis as JSON.
 
 DEBT INFORMATION:
-- Type: ${type}
+- Type: ${effectiveType}
 - Amount: $${debtAmount.toLocaleString()}
 - Creditor/Provider: ${creditor || "Unknown"}
 - State: ${state || "Unknown"} (SOL for written contracts: ${sol?.written || "unknown"} years, oral: ${sol?.oral || "unknown"} years)
 - Debt Age: ${debt_age || "Unknown"} (approximately ${debtAgeYears} years)
 - Description: ${description || "None provided"}
-${bill_text ? `\nBILL TEXT / DETAILS:\n${bill_text}` : ""}
+${extractedBillText ? `\nBILL TEXT / DETAILS:\n${extractedBillText}` : ""}
 
 Today's date: ${new Date().toLocaleDateString("en-US", { year: "numeric", month: "long", day: "numeric" })}`;
 
@@ -239,7 +282,7 @@ Today's date: ${new Date().toLocaleDateString("en-US", { year: "numeric", month:
       },
       negotiationScript: analysis.negotiation_script || [],
       keyFindings: analysis.key_findings || [],
-      debtType: type,
+      debtType: effectiveType,
       creditor: creditor || "Unknown",
       amount: debtAmount,
     };

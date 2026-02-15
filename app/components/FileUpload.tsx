@@ -3,29 +3,36 @@
 import { useState, useCallback } from "react";
 
 interface FileUploadProps {
-  onFile: (file: File) => void;
+  onFile: (file: File, base64: string, mimeType: string) => void;
 }
 
 export default function FileUpload({ onFile }: FileUploadProps) {
   const [dragActive, setDragActive] = useState(false);
   const [fileName, setFileName] = useState<string | null>(null);
 
+  const processFile = useCallback((file: File) => {
+    setFileName(file.name);
+    const reader = new FileReader();
+    reader.onload = () => {
+      const dataUrl = reader.result as string;
+      // dataUrl = "data:<mime>;base64,<data>"
+      const mimeType = dataUrl.substring(dataUrl.indexOf(":") + 1, dataUrl.indexOf(";"));
+      const base64 = dataUrl.substring(dataUrl.indexOf(",") + 1);
+      onFile(file, base64, mimeType);
+    };
+    reader.readAsDataURL(file);
+  }, [onFile]);
+
   const handleDrop = useCallback((e: React.DragEvent) => {
     e.preventDefault();
     setDragActive(false);
     const file = e.dataTransfer.files[0];
-    if (file) {
-      setFileName(file.name);
-      onFile(file);
-    }
-  }, [onFile]);
+    if (file) processFile(file);
+  }, [processFile]);
 
   const handleChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     const file = e.target.files?.[0];
-    if (file) {
-      setFileName(file.name);
-      onFile(file);
-    }
+    if (file) processFile(file);
   };
 
   return (
