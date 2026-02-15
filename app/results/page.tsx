@@ -8,8 +8,9 @@ interface LineItem {
   description: string;
   billed: number;
   fair: number;
-  status: "fair" | "overcharged" | "error";
+  status: "fair" | "overcharged" | "error" | "questionable";
   savings: number;
+  note?: string;
 }
 
 interface AnalysisResult {
@@ -20,6 +21,8 @@ interface AnalysisResult {
     savingsPercent: number;
     settlementAmount: number;
     settlementPercent: number;
+    riskLevel?: string;
+    aiSummary?: string;
   };
   lineItems: LineItem[];
   statuteOfLimitations: {
@@ -31,7 +34,8 @@ interface AnalysisResult {
     isExpired: boolean;
     message: string;
   };
-  fdcpaViolations: { violation: string; statute: string; severity: string }[];
+  fdcpaViolations: { violation: string; statute: string; severity: string; damages?: string }[];
+  keyFindings?: string[];
   letters: {
     dispute: string;
     validation: string;
@@ -73,7 +77,7 @@ export default function ResultsPage() {
     );
   }
 
-  const { summary, lineItems, statuteOfLimitations, fdcpaViolations, letters, negotiationScript } = results;
+  const { summary, lineItems, statuteOfLimitations, fdcpaViolations, letters, negotiationScript, keyFindings } = results;
 
   return (
     <div className="min-h-screen py-12">
@@ -100,6 +104,38 @@ export default function ResultsPage() {
           </div>
         </div>
 
+        {/* AI Summary */}
+        {summary.aiSummary && (
+          <div className="glass rounded-2xl p-6 mb-8 animate-fade-in-up">
+            <h2 className="text-xl font-bold text-white mb-3">🤖 AI Analysis</h2>
+            <p className="text-slate-300 leading-relaxed">{summary.aiSummary}</p>
+            {summary.riskLevel && (
+              <span className={`inline-block mt-3 px-3 py-1 rounded-full text-xs font-bold ${
+                summary.riskLevel === "high" ? "bg-crusher-red/20 text-crusher-red" :
+                summary.riskLevel === "medium" ? "bg-yellow-500/20 text-yellow-400" :
+                "bg-crusher-green/20 text-crusher-green"
+              }`}>
+                Risk Level: {summary.riskLevel.toUpperCase()}
+              </span>
+            )}
+          </div>
+        )}
+
+        {/* Key Findings */}
+        {keyFindings && keyFindings.length > 0 && (
+          <div className="glass rounded-2xl p-6 mb-8 animate-fade-in-up">
+            <h2 className="text-xl font-bold text-white mb-3">🔑 Key Findings</h2>
+            <ul className="space-y-2">
+              {keyFindings.map((finding, i) => (
+                <li key={i} className="flex items-start gap-2 text-slate-300 text-sm">
+                  <span className="text-crusher-blue mt-0.5">•</span>
+                  <span>{finding}</span>
+                </li>
+              ))}
+            </ul>
+          </div>
+        )}
+
         {/* Settlement Recommendation */}
         <div className="glass rounded-2xl p-6 mb-8 animate-fade-in-up-delay">
           <h2 className="text-xl font-bold text-white mb-3">💰 Settlement Recommendation</h2>
@@ -119,10 +155,11 @@ export default function ResultsPage() {
                 <div key={i} className="flex items-center justify-between bg-slate-800/50 rounded-xl p-4">
                   <div className="flex-1">
                     <div className="flex items-center gap-2">
-                      <span>{item.status === "fair" ? "✅" : item.status === "overcharged" ? "⚠️" : "❌"}</span>
+                      <span>{item.status === "fair" ? "✅" : item.status === "overcharged" ? "⚠️" : item.status === "questionable" ? "❓" : "❌"}</span>
                       <span className="text-white font-semibold text-sm">{item.description}</span>
                     </div>
-                    <span className="text-slate-400 text-xs">CPT {item.code}</span>
+                    {item.code && <span className="text-slate-400 text-xs">CPT {item.code}</span>}
+                    {item.note && <p className="text-slate-500 text-xs mt-1">{item.note}</p>}
                   </div>
                   <div className="text-right">
                     <p className="text-crusher-red font-bold">${item.billed.toLocaleString()}</p>
