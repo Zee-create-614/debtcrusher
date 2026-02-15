@@ -10,7 +10,7 @@ type DebtType = "Medical" | "Credit Card" | "Student Loan" | "Auto" | "Collectio
 
 export default function AnalyzePage() {
   const router = useRouter();
-  const [mode, setMode] = useState<Mode>("describe");
+  const [mode, setMode] = useState<Mode>("upload");
   const [loading, setLoading] = useState(false);
 
   // Upload mode
