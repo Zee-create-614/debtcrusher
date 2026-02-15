@@ -36,7 +36,7 @@ const emptyItem = (): NegativeItem => ({
 
 export default function CreditRepairPage() {
   const router = useRouter();
-  const [mode, setMode] = useState<Mode>("describe");
+  const [mode, setMode] = useState<Mode>("upload");
   const [loading, setLoading] = useState(false);
   const [loadingStatus, setLoadingStatus] = useState("");
   const [state, setState] = useState("");
@@ -152,7 +152,7 @@ export default function CreditRepairPage() {
             Credit <span className="text-crusher-blue">Repair</span> Analyzer
           </h1>
           <p className="text-slate-400 text-lg">
-            Find disputable items, generate FCRA-compliant dispute letters, and boost your credit score.
+            Upload your credit report — AI automatically finds every disputable item and generates ready-to-send dispute letters.
           </p>
         </div>
 
@@ -172,15 +172,18 @@ export default function CreditRepairPage() {
         </div>
 
         <div className="glass-strong rounded-2xl p-8 animate-fade-in-up-delay">
-          {/* State selector — shared across all modes */}
-          <div className="mb-6">
-            <label className="block text-white font-semibold mb-2">What state are you in?</label>
-            <StateSelector value={state} onChange={setState} />
-          </div>
+          {/* State selector — only for manual/paste modes */}
+          {mode === "describe" && (
+            <div className="mb-6">
+              <label className="block text-white font-semibold mb-2">What state are you in?</label>
+              <StateSelector value={state} onChange={setState} />
+            </div>
+          )}
 
           {/* Upload Mode */}
           {mode === "upload" && (
             <div className="space-y-6">
+              <p className="text-slate-400 text-sm text-center">Upload a screenshot or PDF of your credit report — our AI reads everything automatically.</p>
               <FileUpload
                 onFile={(f, base64, mime) => {
                   setFile(f);
@@ -190,7 +193,7 @@ export default function CreditRepairPage() {
               />
               <button
                 onClick={handleAnalyze}
-                disabled={loading || !canSubmit}
+                disabled={loading || !imageBase64}
                 className="w-full bg-crusher-blue hover:bg-crusher-blue-dark disabled:opacity-50 text-white py-4 rounded-xl font-bold text-lg transition-all hover:scale-105"
               >
                 {loading ? `⏳ ${loadingStatus}` : "⚡ Analyze Credit Report"}
