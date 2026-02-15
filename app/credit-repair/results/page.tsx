@@ -369,6 +369,13 @@ export default function CreditRepairResultsPage() {
           </div>
         )}
 
+        {/* Verify CTA */}
+        <div className="glass rounded-xl p-5 text-center mb-6 border border-crusher-green/20 animate-fade-in-up">
+          <a href="/verify" className="text-crusher-green hover:text-white font-semibold transition-colors">
+            🔍 Come back in 60 days to verify your results and claim your money-back guarantee →
+          </a>
+        </div>
+
         {/* Actions */}
         <div className="flex flex-col sm:flex-row gap-4 mb-8">
           <a href="/credit-repair" className="flex-1 bg-crusher-blue hover:bg-crusher-blue-dark text-white py-4 rounded-xl font-bold text-lg transition-all hover:scale-105 text-center">

@@ -397,8 +397,15 @@ export default function ResultsPage() {
           </a>
         </div>
 
+        {/* Verify CTA */}
+        <div className="mt-6 glass rounded-xl p-5 text-center border border-crusher-green/20">
+          <a href="/verify" className="text-crusher-green hover:text-white font-semibold transition-colors">
+            🔍 Come back in 60 days to verify your results and claim your money-back guarantee →
+          </a>
+        </div>
+
         {/* Credit Repair CTA */}
-        <div className="mt-6 glass rounded-xl p-5 text-center border border-crusher-blue/20">
+        <div className="mt-4 glass rounded-xl p-5 text-center border border-crusher-blue/20">
           <a href="/credit-repair" className="text-crusher-blue hover:text-white font-semibold transition-colors">
             📈 Also need credit repair? Analyze your credit report and generate dispute letters →
           </a>

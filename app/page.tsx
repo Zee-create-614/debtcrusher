@@ -236,7 +236,7 @@ export default function Home() {
               { q: "Is my medical data safe?", a: "Absolutely. We use 256-bit encryption, HIPAA-compliant processing, and auto-delete your data after analysis. We never store your bills permanently or share your information with third parties." },
               { q: "How accurate is the AI analysis?", a: "Our AI cross-references your bill against a database of thousands of CPT codes, fair market rates, and common billing errors. We catch overcharges that most people would never notice. If we don't find savings, you get a full refund." },
               { q: "What types of bills can you analyze?", a: "Medical bills, hospital bills, ER bills, dental bills, lab bills, and collection notices. We support PDF uploads, photos/screenshots, pasted text, or manual description of your charges." },
-              { q: "How does the money-back guarantee work?", a: "If our analysis doesn't identify any errors, overcharges, or savings opportunities, we refund your $25 analysis fee in full. No questions asked." },
+              { q: "How does the money-back guarantee work?", a: "We guarantee results. If your disputed items aren't removed within 60 days, get a full $7.99 refund. Simply come back to our Verify Results page, upload your new credit report, and if nothing was removed, claim your refund instantly." },
               { q: "Is this legal advice?", a: "No. DebtCrusher provides educational information and generates template letters based on established consumer protection laws. We are not a law firm and do not provide legal advice. For complex legal matters, we recommend consulting with a consumer protection attorney." },
               { q: "How long does the analysis take?", a: "Most analyses complete in under 60 seconds. Complex bills with many line items may take up to 2 minutes." },
             ].map((faq, i) => (
@@ -296,6 +296,7 @@ export default function Home() {
               <h4 className="text-white font-semibold mb-3">Support</h4>
               <ul className="space-y-2 text-sm text-slate-400">
                 <li><a href="mailto:support@debtcrusher.ai" className="hover:text-white transition-colors">support@debtcrusher.ai</a></li>
+                <li><a href="/verify" className="hover:text-white transition-colors">Verify Results</a></li>
                 <li><a href="#" className="hover:text-white transition-colors">Help Center</a></li>
               </ul>
             </div>
