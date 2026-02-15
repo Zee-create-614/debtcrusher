@@ -346,6 +346,64 @@ export default function CreditRepairPage() {
           )}
         </div>
 
+        {/* Get Your Free Credit Report */}
+        <div className="glass rounded-2xl p-6 mt-8">
+          <h3 className="text-lg font-bold text-white mb-3">📊 Get Your Free Credit Report</h3>
+          <p className="text-slate-400 text-sm mb-4">
+            You&apos;re entitled to a <span className="text-white font-semibold">free weekly credit report</span> from all 3 bureaus. Download yours, then upload it here for AI analysis.
+          </p>
+          <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
+            <a
+              href="https://www.annualcreditreport.com/index.action"
+              target="_blank"
+              rel="noopener noreferrer"
+              className="flex items-center gap-3 bg-crusher-blue/10 border border-crusher-blue/20 rounded-xl p-4 hover:bg-crusher-blue/20 transition-all group"
+            >
+              <span className="text-2xl">⭐</span>
+              <div>
+                <p className="text-white font-semibold text-sm group-hover:text-crusher-blue transition-colors">AnnualCreditReport.com</p>
+                <p className="text-slate-400 text-xs">Official free report — all 3 bureaus at once</p>
+              </div>
+            </a>
+            <a
+              href="https://www.equifax.com/personal/credit-report-services/free-credit-reports/"
+              target="_blank"
+              rel="noopener noreferrer"
+              className="flex items-center gap-3 bg-white/[0.03] border border-white/5 rounded-xl p-4 hover:bg-white/[0.06] transition-all group"
+            >
+              <span className="text-2xl">🔴</span>
+              <div>
+                <p className="text-white font-semibold text-sm">Equifax</p>
+                <p className="text-slate-400 text-xs">Free weekly report direct</p>
+              </div>
+            </a>
+            <a
+              href="https://www.experian.com/consumer-products/free-credit-report.html"
+              target="_blank"
+              rel="noopener noreferrer"
+              className="flex items-center gap-3 bg-white/[0.03] border border-white/5 rounded-xl p-4 hover:bg-white/[0.06] transition-all group"
+            >
+              <span className="text-2xl">🔵</span>
+              <div>
+                <p className="text-white font-semibold text-sm">Experian</p>
+                <p className="text-slate-400 text-xs">Free report + FICO score</p>
+              </div>
+            </a>
+            <a
+              href="https://www.transunion.com/credit-disputes/dispute-your-credit"
+              target="_blank"
+              rel="noopener noreferrer"
+              className="flex items-center gap-3 bg-white/[0.03] border border-white/5 rounded-xl p-4 hover:bg-white/[0.06] transition-all group"
+            >
+              <span className="text-2xl">🟢</span>
+              <div>
+                <p className="text-white font-semibold text-sm">TransUnion</p>
+                <p className="text-slate-400 text-xs">Free report + dispute portal</p>
+              </div>
+            </a>
+          </div>
+        </div>
+
         {/* Trust Signals */}
         <div className="flex flex-wrap justify-center gap-6 mt-8 text-slate-400 text-sm">
           <span>🔒 256-bit encrypted</span>
