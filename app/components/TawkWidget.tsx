@@ -1,26 +1,24 @@
 "use client";
 
-import { useEffect, useState } from "react";
+import { useEffect } from "react";
+
+const TAWK_ID = process.env.NEXT_PUBLIC_TAWK_PROPERTY_ID || "";
 
 export default function TawkWidget() {
-  const [tawkId, setTawkId] = useState<string | null>(null);
-
   useEffect(() => {
-    const id = process.env.NEXT_PUBLIC_TAWK_PROPERTY_ID;
-    if (id) {
-      setTawkId(id);
-      // Load Tawk.to script
-      const s1 = document.createElement("script");
-      s1.async = true;
-      s1.src = `https://embed.tawk.to/${id}/default`;
-      s1.charset = "UTF-8";
-      s1.setAttribute("crossorigin", "*");
-      document.head.appendChild(s1);
-    }
+    if (!TAWK_ID) return;
+    const s1 = document.createElement("script");
+    s1.async = true;
+    s1.src = `https://embed.tawk.to/${TAWK_ID}/default`;
+    s1.charset = "UTF-8";
+    s1.setAttribute("crossorigin", "*");
+    document.head.appendChild(s1);
+    return () => {
+      document.head.removeChild(s1);
+    };
   }, []);
 
-  // If Tawk isn't configured, show fallback support button
-  if (tawkId) return null;
+  if (TAWK_ID) return null;
 
   return (
     <a
