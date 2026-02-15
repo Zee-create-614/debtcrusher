@@ -1,5 +1,6 @@
 'use client'
 
+import { Suspense } from 'react'
 import { useSearchParams } from 'next/navigation'
 import { AlertCircle, ArrowLeft } from 'lucide-react'
 
@@ -11,6 +12,14 @@ const errorMessages: Record<string, string> = {
 }
 
 export default function AuthErrorPage() {
+  return (
+    <Suspense fallback={<div className="min-h-screen flex items-center justify-center"><div className="text-white">Loading...</div></div>}>
+      <AuthErrorInner />
+    </Suspense>
+  )
+}
+
+function AuthErrorInner() {
   const searchParams = useSearchParams()
   const error = searchParams.get('error')
   const errorMessage = error ? errorMessages[error] || errorMessages.Default : errorMessages.Default
