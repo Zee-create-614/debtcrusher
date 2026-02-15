@@ -1,6 +1,6 @@
 "use client";
 
-import { useEffect, useState } from "react";
+import { useEffect, useState, Suspense } from "react";
 import { useSession, signIn } from 'next-auth/react';
 import LetterPreview from "../components/LetterPreview";
 import SendLetterModal from "../components/SendLetterModal";
@@ -122,6 +122,16 @@ export default function ResultsPage() {
         setResults(null);
       }
     }
+    
+    // Check for unlock parameters from successful payment
+    const urlParams = new URLSearchParams(window.location.search);
+    const unlocked = urlParams.get('unlocked');
+    if (unlocked === 'script') {
+      setScriptUnlocked(true);
+      // Clean up URL
+      const newUrl = window.location.pathname;
+      window.history.replaceState({}, '', newUrl);
+    }
   }, [session]);
 
   const saveToAccount = async (analysisData?: AnalysisResult) => {
@@ -156,6 +166,34 @@ export default function ResultsPage() {
 
   const handleCreateAccount = () => {
     signIn();
+  };
+
+  const handleUnlockScript = async () => {
+    try {
+      const response = await fetch('/api/checkout', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify({
+          product: 'script_unlock',
+          amount: 799, // $7.99 in cents
+          description: 'Debt Negotiation Script - DebtCrusher.ai',
+          successUrl: `${window.location.origin}/checkout/success`,
+          cancelUrl: `${window.location.origin}/checkout/cancel`,
+        }),
+      });
+
+      if (!response.ok) {
+        throw new Error('Failed to create checkout session');
+      }
+
+      const { url } = await response.json();
+      window.location.href = url;
+    } catch (error) {
+      console.error('Error creating checkout session:', error);
+      alert('Failed to start checkout. Please try again.');
+    }
   };
 
   if (!results) {
@@ -472,7 +510,7 @@ export default function ResultsPage() {
                 </div>
                 <div className="absolute inset-0 flex items-center justify-center">
                   <button
-                    onClick={() => setScriptUnlocked(true)}
+                    onClick={handleUnlockScript}
                     className="bg-crusher-blue hover:bg-crusher-blue-dark text-white px-6 py-3 rounded-xl font-bold transition-all hover:scale-105 shadow-lg shadow-crusher-blue/25"
                   >
                     🔓 Unlock Full Script — $7.99

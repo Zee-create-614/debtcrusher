@@ -163,6 +163,11 @@ export default function SendLetterModal({ isOpen, onClose, letterContent, letter
                   <span className="text-crusher-green font-black text-lg">$7.99</span>
                 </div>
                 <p className="text-slate-500 text-xs">Includes printing, postage, certified mail tracking, and delivery confirmation.</p>
+                <div className="mt-3 p-3 bg-yellow-500/10 border border-yellow-500/20 rounded-lg">
+                  <p className="text-yellow-300 text-xs font-medium">
+                    💳 Payment will be charged when you send this letter
+                  </p>
+                </div>
               </div>
 
               <button

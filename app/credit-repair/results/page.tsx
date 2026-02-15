@@ -111,6 +111,16 @@ export default function CreditRepairResultsPage() {
         setResults(null);
       }
     }
+    
+    // Check for unlock parameters from successful payment
+    const urlParams = new URLSearchParams(window.location.search);
+    const unlocked = urlParams.get('unlocked');
+    if (unlocked === 'letters') {
+      setLettersUnlocked(true);
+      // Clean up URL
+      const newUrl = window.location.pathname;
+      window.history.replaceState({}, '', newUrl);
+    }
   }, [session]);
 
   const saveToAccount = async (analysisData?: CreditRepairResult) => {
@@ -144,6 +154,34 @@ export default function CreditRepairResultsPage() {
 
   const handleCreateAccount = () => {
     signIn();
+  };
+
+  const handleUnlockLetters = async () => {
+    try {
+      const response = await fetch('/api/checkout', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify({
+          product: 'credit_repair_unlock',
+          amount: 799, // $7.99 in cents
+          description: 'Credit Repair Dispute Letters - DebtCrusher.ai',
+          successUrl: `${window.location.origin}/checkout/success`,
+          cancelUrl: `${window.location.origin}/checkout/cancel`,
+        }),
+      });
+
+      if (!response.ok) {
+        throw new Error('Failed to create checkout session');
+      }
+
+      const { url } = await response.json();
+      window.location.href = url;
+    } catch (error) {
+      console.error('Error creating checkout session:', error);
+      alert('Failed to start checkout. Please try again.');
+    }
   };
 
   if (!results) {
@@ -425,7 +463,7 @@ export default function CreditRepairResultsPage() {
                 Get all {allLetters.length} dispute letters — FCRA-compliant, personalized, ready to send to Equifax, Experian, and TransUnion.
               </p>
               <button
-                onClick={() => setLettersUnlocked(true)}
+                onClick={handleUnlockLetters}
                 className="bg-crusher-blue hover:bg-crusher-blue-dark text-white px-8 py-4 rounded-xl font-bold text-lg transition-all hover:scale-105 shadow-lg shadow-crusher-blue/25"
               >
                 🔓 Unlock All Dispute Letters — $7.99
