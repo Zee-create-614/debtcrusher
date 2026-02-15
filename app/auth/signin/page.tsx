@@ -3,7 +3,7 @@
 import { signIn, getSession } from 'next-auth/react'
 import { useState, useEffect, Suspense } from 'react'
 import { useRouter, useSearchParams } from 'next/navigation'
-import { Mail, AlertCircle } from 'lucide-react'
+import { Mail, AlertCircle, CheckCircle } from 'lucide-react'
 
 export default function SignInPage() {
   return (
@@ -17,12 +17,12 @@ function SignInInner() {
   const [email, setEmail] = useState('')
   const [loading, setLoading] = useState(false)
   const [error, setError] = useState('')
+  const [sent, setSent] = useState(false)
   const router = useRouter()
   const searchParams = useSearchParams()
   const callbackUrl = searchParams.get('callbackUrl') || '/'
 
   useEffect(() => {
-    // Check if already signed in
     getSession().then((session) => {
       if (session) {
         router.push(callbackUrl)
@@ -42,34 +42,28 @@ function SignInInner() {
     }
 
     try {
-      // Use credentials provider for MVP (no email verification)
-      const result = await signIn('email-only', {
-        email: email,
-        redirect: false,
+      const res = await fetch('/api/auth/magic', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ email, callbackUrl }),
       })
 
-      if (result?.error) {
-        setError('Sign in failed. Please try again.')
+      if (!res.ok) {
+        setError('Failed to send sign-in link. Please try again.')
       } else {
-        // Track user signup/signin
+        setSent(true)
+        // Track signup
         try {
           await fetch("/api/analytics/track", {
             method: "POST",
             headers: { "Content-Type": "application/json" },
             body: JSON.stringify({
               event: "user_signup",
-              data: {
-                email: email,
-                method: "email-only"
-              },
+              data: { email, method: "magic-link" },
               timestamp: new Date().toISOString()
             })
           });
-        } catch (error) {
-          console.error("Failed to track analytics:", error);
-        }
-
-        router.push(callbackUrl)
+        } catch {}
       }
     } catch (err) {
       console.error('Sign in error:', err)
@@ -79,53 +73,48 @@ function SignInInner() {
     }
   }
 
-  const handleEmailSignIn = async () => {
-    if (!email) {
-      setError('Please enter your email address')
-      return
-    }
-
-    setLoading(true)
-    setError('')
-
-    try {
-      // Try email provider (magic link)
-      const result = await signIn('email', {
-        email: email,
-        callbackUrl: callbackUrl,
-        redirect: false,
-      })
-
-      if (result?.error) {
-        setError('Email sign-in is not configured yet. Please use simple sign-in instead.')
-      } else {
-        alert('Check your email for a sign-in link!')
-      }
-    } catch (err) {
-      console.error('Email sign in error:', err)
-      setError('Email sign-in is not available yet. Please use simple sign-in instead.')
-    } finally {
-      setLoading(false)
-    }
+  if (sent) {
+    return (
+      <div className="min-h-screen bg-gray-900 flex items-center justify-center p-4">
+        <div className="max-w-md w-full bg-gray-800 rounded-2xl p-8 shadow-2xl text-center">
+          <div className="w-16 h-16 bg-green-600/20 rounded-full flex items-center justify-center mx-auto mb-6">
+            <CheckCircle size={32} className="text-green-400" />
+          </div>
+          <h1 className="text-2xl font-bold text-white mb-3">Check Your Email</h1>
+          <p className="text-gray-400 mb-2">
+            We sent a sign-in link to
+          </p>
+          <p className="text-green-400 font-medium mb-6">{email}</p>
+          <p className="text-gray-500 text-sm mb-6">
+            Click the link in the email to sign in. It may take a minute to arrive. Check your spam folder if you don't see it.
+          </p>
+          <button
+            onClick={() => { setSent(false); setEmail('') }}
+            className="text-gray-400 hover:text-white text-sm transition-colors"
+          >
+            ← Try a different email
+          </button>
+        </div>
+      </div>
+    )
   }
 
   return (
     <div className="min-h-screen bg-gray-900 flex items-center justify-center p-4">
       <div className="max-w-md w-full bg-gray-800 rounded-2xl p-8 shadow-2xl">
         <div className="text-center mb-8">
-          <h1 className="text-3xl font-bold text-white mb-2">Welcome Back</h1>
-          <p className="text-gray-400">Sign in to access your account and saved analyses</p>
+          <h1 className="text-3xl font-bold text-white mb-2">Welcome to DebtCrusher</h1>
+          <p className="text-gray-400">Sign in to save your analyses and track your progress</p>
         </div>
 
         <div className="space-y-6">
-          <div className="bg-blue-900/20 border border-blue-700/50 rounded-lg p-4 mb-6">
+          <div className="bg-green-900/20 border border-green-700/50 rounded-lg p-4 mb-6">
             <div className="flex items-start gap-3">
-              <Mail size={18} className="text-blue-400 mt-0.5 flex-shrink-0" />
+              <Mail size={18} className="text-green-400 mt-0.5 flex-shrink-0" />
               <div>
-                <p className="text-blue-200 font-medium text-sm mb-1">MVP Notice</p>
+                <p className="text-green-200 font-medium text-sm mb-1">No Password Needed</p>
                 <p className="text-gray-300 text-sm">
-                  For the MVP, we use simple email-based accounts with no password required. 
-                  Just enter your email and you're signed in!
+                  We'll send you a secure sign-in link. No password to remember!
                 </p>
               </div>
             </div>
@@ -160,38 +149,9 @@ function SignInInner() {
               disabled={loading}
               className="w-full bg-green-600 hover:bg-green-500 disabled:opacity-50 text-white py-3 rounded-lg font-medium transition-colors"
             >
-              {loading ? 'Signing in...' : 'Sign In (MVP - No Password)'}
+              {loading ? 'Sending link...' : 'Send Sign-In Link'}
             </button>
           </form>
-
-          <div className="relative">
-            <div className="absolute inset-0 flex items-center">
-              <div className="w-full border-t border-gray-700"></div>
-            </div>
-            <div className="relative flex justify-center text-sm">
-              <span className="px-2 bg-gray-800 text-gray-400">or</span>
-            </div>
-          </div>
-
-          <button
-            onClick={handleEmailSignIn}
-            disabled={loading}
-            className="w-full bg-gray-600 hover:bg-gray-500 disabled:opacity-50 text-white py-3 rounded-lg font-medium transition-colors"
-          >
-            Send Magic Link (Requires SMTP Setup)
-          </button>
-
-          <div className="text-center">
-            <p className="text-gray-400 text-sm">
-              Don't have an account?{' '}
-              <button
-                onClick={() => router.push('/auth/signin')}
-                className="text-green-400 hover:text-green-300 font-medium"
-              >
-                Just enter your email above!
-              </button>
-            </p>
-          </div>
 
           <div className="text-center text-xs text-gray-500 space-y-1">
             <p>By signing in, you agree to our</p>
