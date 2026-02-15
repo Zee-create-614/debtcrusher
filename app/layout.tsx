@@ -38,7 +38,7 @@ export default function RootLayout({
             <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
               <div className="flex items-center justify-between h-16">
                 <a href="/" className="flex items-center gap-2">
-                  <span className="text-2xl font-black text-crusher-blue">⚡</span>
+                  <img src="/logo.jpg" alt="DebtCrusher" className="h-9 w-9 rounded-lg" />
                   <span className="text-xl font-black text-white">Debt<span className="text-crusher-blue">Crusher</span><span className="text-slate-400 text-sm">.ai</span></span>
                 </a>
                 <div className="hidden md:flex items-center gap-6">

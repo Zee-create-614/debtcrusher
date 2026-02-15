@@ -11,7 +11,7 @@ export default function Home() {
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-24 md:py-36 relative">
           <div className="text-center max-w-4xl mx-auto animate-fade-in-up">
             <div className="inline-block bg-crusher-blue/10 border border-crusher-blue/20 rounded-full px-4 py-1.5 text-sm text-crusher-blue font-medium mb-6">
-              ⚡ AI-Powered Debt Defense
+              AI-Powered Debt Defense
             </div>
             <h1 className="text-4xl md:text-6xl lg:text-7xl font-black text-white leading-tight mb-6">
               Crush Your Debt.
@@ -272,7 +272,7 @@ export default function Home() {
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
           <div className="grid grid-cols-1 md:grid-cols-4 gap-8">
             <div>
-              <span className="text-xl font-black text-white">⚡ Debt<span className="text-crusher-blue">Crusher</span><span className="text-slate-400 text-sm">.ai</span></span>
+              <div className="flex items-center gap-2"><img src="/logo.jpg" alt="DebtCrusher" className="h-8 w-8 rounded-lg" /><span className="text-xl font-black text-white">Debt<span className="text-crusher-blue">Crusher</span><span className="text-slate-400 text-sm">.ai</span></span></div>
               <p className="text-slate-400 text-sm mt-2">AI-powered medical bill analysis and debt defense.</p>
             </div>
             <div>
