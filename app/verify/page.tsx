@@ -252,7 +252,7 @@ export default function VerifyPage() {
               <span className="text-5xl block mb-4">🛡️</span>
               <h3 className="text-2xl font-black text-white mb-2">Money-Back Guarantee</h3>
               <p className="text-slate-400 mb-4">
-                None of your disputed items were removed after 60 days. You&apos;re eligible for a full <span className="text-white font-bold">$7.99 refund</span>.
+                We weren&apos;t able to get at least 1 item removed from your credit report after 60 days. You&apos;re eligible for a full <span className="text-white font-bold">$7.99 refund</span>.
               </p>
               <a
                 href={refundMailto}

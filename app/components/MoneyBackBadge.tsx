@@ -6,7 +6,7 @@ export default function MoneyBackBadge() {
       <span className="text-2xl">🛡️</span>
       <div>
         <p className="text-crusher-green font-bold text-sm">60-Day Money-Back Guarantee</p>
-        <p className="text-slate-400 text-xs">Disputed items not removed? Get a full refund.</p>
+        <p className="text-slate-400 text-xs">We guarantee at least 1 removal — or your money back.</p>
       </div>
     </a>
   );
