@@ -223,7 +223,10 @@ export default function CreditRepairResultsPage() {
       const response = await fetch('/api/user/credit-repair-results');
       if (response.ok) {
         const data = await response.json();
-        setResults(data.results);
+        // Apply personalization if user_info is present
+        const userInfo = data.results?.user_info;
+        const personalizedResults = userInfo ? personalizeResults(data.results, userInfo) : data.results;
+        setResults(personalizedResults);
         setLettersUnlocked(data.unlocked || false);
         
         // Also save to sessionStorage for immediate access
