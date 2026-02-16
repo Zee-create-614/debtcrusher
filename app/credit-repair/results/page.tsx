@@ -191,7 +191,7 @@ export default function CreditRepairResultsPage() {
         body: JSON.stringify({
           product: 'credit_repair_unlock',
           amount: 799, // $7.99 in cents
-          description: 'Credit Repair Dispute Letters - DebtCrusher.ai',
+          description: `Unlock All ${allLetters.length} Dispute Letters - DebtCrusher.ai`,
           successUrl: `${window.location.origin}/checkout/success?product=credit_repair_unlock`,
           cancelUrl: `${window.location.origin}/checkout/cancel`,
         }),
