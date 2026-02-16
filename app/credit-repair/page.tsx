@@ -72,6 +72,7 @@ export default function CreditRepairPage() {
   const { data: session, status } = useSession();
   const [loading, setLoading] = useState(false);
   const [loadingStatus, setLoadingStatus] = useState("");
+  const [loadingStep, setLoadingStep] = useState(0);
 
   // Redirect to signin if not authenticated
   useEffect(() => {
@@ -138,6 +139,7 @@ export default function CreditRepairPage() {
     }
 
     setLoading(true);
+    setLoadingStep(0);
     setLoadingStatus("📸 Reading your credit report...");
     
     try {
@@ -148,8 +150,10 @@ export default function CreditRepairPage() {
         user_info: userInfo
       };
 
-      setTimeout(() => setLoadingStatus("🔍 Analyzing negative items..."), 3000);
-      setTimeout(() => setLoadingStatus("📝 Generating personalized dispute letters..."), 8000);
+      setTimeout(() => { setLoadingStep(1); setLoadingStatus("🔍 Analyzing negative items..."); }, 3000);
+      setTimeout(() => { setLoadingStep(2); setLoadingStatus("⚖️ Checking FCRA violations & dispute eligibility..."); }, 7000);
+      setTimeout(() => { setLoadingStep(3); setLoadingStatus("📝 Generating personalized dispute letters..."); }, 12000);
+      setTimeout(() => { setLoadingStep(4); setLoadingStatus("✨ Finalizing your results..."); }, 18000);
 
       const res = await fetch("/api/credit-repair", {
         method: "POST",
@@ -338,8 +342,50 @@ export default function CreditRepairPage() {
               disabled={loading || !imageBase64 || !isUserInfoComplete()}
               className="w-full bg-crusher-blue hover:bg-crusher-blue-dark disabled:opacity-50 text-white py-4 rounded-xl font-bold text-lg transition-all hover:scale-105"
             >
-              {loading ? `⏳ ${loadingStatus}` : "⚡ Analyze Credit Report"}
+              {loading ? "Analyzing..." : "⚡ Analyze Credit Report"}
             </button>
+
+            {/* Analysis Loading Overlay */}
+            {loading && (
+              <div className="fixed inset-0 bg-black/80 backdrop-blur-sm z-50 flex items-center justify-center">
+                <div className="bg-gray-900 border border-gray-700 rounded-2xl p-8 max-w-md w-full mx-4 text-center">
+                  {/* Spinning circle */}
+                  <div className="relative w-20 h-20 mx-auto mb-6">
+                    <div className="absolute inset-0 rounded-full border-4 border-gray-700"></div>
+                    <div className="absolute inset-0 rounded-full border-4 border-transparent border-t-blue-500 animate-spin"></div>
+                    <div className="absolute inset-2 rounded-full border-4 border-transparent border-t-cyan-400 animate-spin" style={{animationDirection: 'reverse', animationDuration: '1.5s'}}></div>
+                    <div className="absolute inset-0 flex items-center justify-center text-2xl">🧠</div>
+                  </div>
+                  
+                  <h3 className="text-xl font-bold text-white mb-2">AI Analyzing Your Report</h3>
+                  <p className="text-blue-400 font-medium mb-6">{loadingStatus}</p>
+                  
+                  {/* Progress steps */}
+                  <div className="space-y-3 text-left">
+                    {[
+                      "Reading your credit report",
+                      "Analyzing negative items",
+                      "Checking FCRA violations",
+                      "Generating dispute letters",
+                      "Finalizing results"
+                    ].map((step, i) => (
+                      <div key={i} className={`flex items-center gap-3 transition-all duration-500 ${i <= loadingStep ? 'opacity-100' : 'opacity-30'}`}>
+                        <div className={`w-6 h-6 rounded-full flex items-center justify-center text-xs font-bold shrink-0 ${
+                          i < loadingStep ? 'bg-green-500 text-white' : 
+                          i === loadingStep ? 'bg-blue-500 text-white animate-pulse' : 
+                          'bg-gray-700 text-gray-500'
+                        }`}>
+                          {i < loadingStep ? '✓' : i + 1}
+                        </div>
+                        <span className={`text-sm ${i <= loadingStep ? 'text-white' : 'text-gray-500'}`}>{step}</span>
+                      </div>
+                    ))}
+                  </div>
+                  
+                  <p className="text-gray-500 text-xs mt-6">This usually takes 15-30 seconds</p>
+                </div>
+              </div>
+            )}
             
             {!isUserInfoComplete() && (
               <p className="text-crusher-red text-sm text-center">Please fill in all required information fields above</p>
