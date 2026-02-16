@@ -42,6 +42,7 @@ export default function AccountPage() {
   const [creditScores, setCreditScores] = useState<CreditScore[]>([])
   const [bureauResponses, setBureauResponses] = useState<BureauResponse[]>([])
   const [loading, setLoading] = useState(true)
+  const [payments, setPayments] = useState<any[]>([])
   const [activeTab, setActiveTab] = useState<'overview' | 'bills' | 'letters' | 'history' | 'payments' | 'responses' | 'scores'>('overview')
   
   // Credit Score Tracker state
@@ -61,6 +62,7 @@ export default function AccountPage() {
 
     if (session?.user?.email) {
       fetchAnalyses()
+      fetchPayments()
       loadCreditScores()
       loadBureauResponses()
     }
@@ -77,6 +79,18 @@ export default function AccountPage() {
       console.error('Error fetching analyses:', error)
     } finally {
       setLoading(false)
+    }
+  }
+
+  const fetchPayments = async () => {
+    try {
+      const response = await fetch('/api/user/payments')
+      if (response.ok) {
+        const data = await response.json()
+        setPayments(data.payments || [])
+      }
+    } catch (error) {
+      console.error('Error fetching payments:', error)
     }
   }
 
@@ -325,6 +339,38 @@ export default function AccountPage() {
       letters.push({
         title: 'Credit Dispute - TransUnion',
         content: analysis.results.letters.credit_dispute_transunion
+      })
+    }
+
+    // Add email templates
+    if (analysis.results.emailTemplates?.debtValidation) {
+      letters.push({
+        title: 'Email - Debt Validation Request',
+        content: analysis.results.emailTemplates.debtValidation
+      })
+    }
+    if (analysis.results.emailTemplates?.ceaseDesist) {
+      letters.push({
+        title: 'Email - Cease & Desist',
+        content: analysis.results.emailTemplates.ceaseDesist
+      })
+    }
+    if (analysis.results.emailTemplates?.settlementOffer) {
+      letters.push({
+        title: 'Email - Settlement Offer',
+        content: analysis.results.emailTemplates.settlementOffer
+      })
+    }
+    if (analysis.results.emailTemplates?.hardshipLetter) {
+      letters.push({
+        title: 'Email - Hardship Letter',
+        content: analysis.results.emailTemplates.hardshipLetter
+      })
+    }
+    if (analysis.results.emailTemplates?.disputeCharges) {
+      letters.push({
+        title: 'Email - Dispute of Charges',
+        content: analysis.results.emailTemplates.disputeCharges
       })
     }
 
@@ -740,11 +786,39 @@ export default function AccountPage() {
         {activeTab === 'payments' && (
           <div className="bg-gray-800 rounded-lg p-6">
             <h2 className="text-xl font-semibold mb-4">Payment History</h2>
-            <div className="text-center text-gray-400 py-12">
-              <DollarSign size={48} className="mx-auto mb-4 opacity-50" />
-              <p>Payment history will be shown here.</p>
-              <p className="text-sm mt-2">This feature tracks your purchases and payments made through DebtCrusher.ai</p>
-            </div>
+            {payments.length === 0 ? (
+              <div className="text-center text-gray-400 py-12">
+                <DollarSign size={48} className="mx-auto mb-4 opacity-50" />
+                <p>No payments yet.</p>
+                <p className="text-sm mt-2">Payments made through DebtCrusher.ai will appear here.</p>
+              </div>
+            ) : (
+              <div className="space-y-3">
+                {payments.map((payment: any) => (
+                  <div key={payment.id} className="bg-gray-700 rounded-lg p-4 flex items-center justify-between">
+                    <div>
+                      <h4 className="font-semibold">{payment.note}</h4>
+                      <p className="text-sm text-gray-400">
+                        {new Date(payment.createdAt).toLocaleDateString('en-US', { year: 'numeric', month: 'long', day: 'numeric' })}
+                      </p>
+                    </div>
+                    <div className="flex items-center gap-4">
+                      <span className="text-lg font-bold text-green-400">${payment.amount.toFixed(2)}</span>
+                      <span className={`px-2 py-1 rounded text-xs ${
+                        payment.status === 'COMPLETED' ? 'bg-green-900 text-green-200' : 'bg-yellow-900 text-yellow-200'
+                      }`}>
+                        {payment.status}
+                      </span>
+                      {payment.receiptUrl && (
+                        <a href={payment.receiptUrl} target="_blank" rel="noopener noreferrer" className="text-blue-400 hover:text-blue-300 text-sm">
+                          Receipt
+                        </a>
+                      )}
+                    </div>
+                  </div>
+                ))}
+              </div>
+            )}
           </div>
         )}
 

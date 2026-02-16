@@ -184,7 +184,8 @@ export default function CreditRepairPage() {
         console.error("Failed to track analytics:", error);
       }
 
-      sessionStorage.setItem("creditRepairResults", JSON.stringify(data));
+      // Store results AND user info so letters can be personalized
+      sessionStorage.setItem("creditRepairResults", JSON.stringify({ ...data, user_info: userInfo }));
       router.push("/credit-repair/results");
     } catch {
       alert("Analysis failed. Please try again.");

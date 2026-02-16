@@ -264,7 +264,7 @@ export default function ResultsPage() {
     );
   }
 
-  const { summary, lineItems, statuteOfLimitations, fdcpaViolations, letters, negotiationScript, keyFindings } = results;
+  const { summary, lineItems, statuteOfLimitations, fdcpaViolations, letters, emailTemplates, negotiationScript, keyFindings } = results;
 
   const collectorPrefill = parseCollectorAddress(results);
 

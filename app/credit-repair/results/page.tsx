@@ -86,6 +86,59 @@ export default function CreditRepairResultsPage() {
   const [showAccountPrompt, setShowAccountPrompt] = useState(false);
   const [savedToAccount, setSavedToAccount] = useState(false);
 
+  // Replace common placeholder patterns in letter text with actual user info
+  const personalizeLetterText = (text: string, userInfo: any): string => {
+    if (!text || !userInfo) return text;
+    const replacements: [RegExp, string][] = [
+      [/\[Your Full Name\]/gi, userInfo.fullName || ''],
+      [/\[Your Name\]/gi, userInfo.fullName || ''],
+      [/\[Full Name\]/gi, userInfo.fullName || ''],
+      [/\[NAME\]/gi, userInfo.fullName || ''],
+      [/\[Your Street Address\]/gi, userInfo.streetAddress || ''],
+      [/\[Your Address\]/gi, userInfo.streetAddress || ''],
+      [/\[Street Address\]/gi, userInfo.streetAddress || ''],
+      [/\[ADDRESS\]/gi, userInfo.streetAddress || ''],
+      [/\[Your City\]/gi, userInfo.city || ''],
+      [/\[City\]/gi, userInfo.city || ''],
+      [/\[Your State\]/gi, userInfo.state || ''],
+      [/\[State\]/gi, userInfo.state || ''],
+      [/\[Your ZIP\]/gi, userInfo.zipCode || ''],
+      [/\[Your Zip Code\]/gi, userInfo.zipCode || ''],
+      [/\[ZIP Code\]/gi, userInfo.zipCode || ''],
+      [/\[ZIP\]/gi, userInfo.zipCode || ''],
+      [/\[City, State ZIP\]/gi, `${userInfo.city || ''}, ${userInfo.state || ''} ${userInfo.zipCode || ''}`],
+      [/\[City, State, ZIP\]/gi, `${userInfo.city || ''}, ${userInfo.state || ''} ${userInfo.zipCode || ''}`],
+      [/\[City, State, Zip Code\]/gi, `${userInfo.city || ''}, ${userInfo.state || ''} ${userInfo.zipCode || ''}`],
+      [/\[Last 4 of SSN\]/gi, userInfo.last4ssn || ''],
+      [/\[Last 4 SSN\]/gi, userInfo.last4ssn || ''],
+      [/\[SSN Last 4\]/gi, userInfo.last4ssn || ''],
+      [/XXX-XX-/g, `XXX-XX-${userInfo.last4ssn || 'XXXX'}`],
+    ];
+    let result = text;
+    for (const [pattern, replacement] of replacements) {
+      result = result.replace(pattern, replacement);
+    }
+    return result;
+  };
+
+  // Apply personalization to all letters in results
+  const personalizeResults = (data: CreditRepairResult, userInfo: any): CreditRepairResult => {
+    if (!userInfo) return data;
+    return {
+      ...data,
+      items: data.items.map(item => ({
+        ...item,
+        dispute_letters: {
+          equifax: personalizeLetterText(item.dispute_letters.equifax, userInfo),
+          experian: personalizeLetterText(item.dispute_letters.experian, userInfo),
+          transunion: personalizeLetterText(item.dispute_letters.transunion, userInfo),
+        },
+        goodwill_letter: item.goodwill_letter ? personalizeLetterText(item.goodwill_letter, userInfo) : null,
+        pay_for_delete_letter: item.pay_for_delete_letter ? personalizeLetterText(item.pay_for_delete_letter, userInfo) : null,
+      })),
+    };
+  };
+
   useEffect(() => {
     // Check for unlock parameters from successful payment first
     const urlParams = new URLSearchParams(window.location.search);
@@ -115,7 +168,10 @@ export default function CreditRepairResultsPage() {
           }
           return;
         }
-        setResults(parsed);
+        // Apply personalization to replace any placeholder text
+        const userInfo = parsed.user_info;
+        const personalizedResults = userInfo ? personalizeResults(parsed, userInfo) : parsed;
+        setResults(personalizedResults);
 
         // Auto-save if user is logged in
         if (session?.user?.email) {
