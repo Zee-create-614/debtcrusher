@@ -37,11 +37,10 @@ export default function Home() {
       {/* Stats Bar */}
       <section className="py-16 border-y border-slate-800">
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
-          <div className="grid grid-cols-1 md:grid-cols-4 gap-6">
+          <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
             <StatCard value="$200B+" label="Americans overpay annually on medical bills" icon="💸" />
             <StatCard value="80%" label="of medical bills contain errors or overcharges" icon="⚠️" />
             <StatCard value="79%" label="of credit reports contain at least one error" icon="📊" />
-            <StatCard value="$2,400" label="Average savings found by DebtCrusher AI" icon="💰" />
           </div>
         </div>
       </section>
