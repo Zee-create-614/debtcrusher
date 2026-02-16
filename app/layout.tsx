@@ -1,4 +1,5 @@
 import type { Metadata } from "next";
+import Script from "next/script";
 import "./globals.css";
 import TawkWidget from "./components/TawkWidget";
 import Providers from "./components/Providers";
@@ -32,16 +33,15 @@ export default function RootLayout({
     <html lang="en">
       <head>
         <link rel="icon" href="/favicon.ico" />
-        {/* Google Ads tag */}
-        <script async src="https://www.googletagmanager.com/gtag/js?id=AW-17957953316"></script>
-        <script dangerouslySetInnerHTML={{ __html: `
-          window.dataLayer = window.dataLayer || [];
-          function gtag(){dataLayer.push(arguments);}
-          gtag('js', new Date());
-          gtag('config', 'AW-17957953316');
-        `}} />
       </head>
       <body className="antialiased min-h-screen">
+        <Script src="https://www.googletagmanager.com/gtag/js?id=AW-17957953316" strategy="afterInteractive" />
+        <Script id="gtag-init" strategy="afterInteractive">
+          {`window.dataLayer = window.dataLayer || [];
+          function gtag(){dataLayer.push(arguments);}
+          gtag('js', new Date());
+          gtag('config', 'AW-17957953316');`}
+        </Script>
         <Providers>
           <nav className="fixed top-0 w-full z-50 glass-strong">
             <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
