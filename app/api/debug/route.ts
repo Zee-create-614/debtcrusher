@@ -33,7 +33,7 @@ export async function GET(request: NextRequest) {
         if (session?.user?.email) {
           const email = session.user.email
           const analyses = await redis.get(`user:analyses:${email}`)
-          const creditResults = await redis.get(`user:credit-results:${email}`)
+          const creditResults = await redis.get<any>(`user:credit-results:${email}`)
           const payments = await redis.get(`user:payments:${email}`)
           
           return NextResponse.json({
@@ -43,6 +43,9 @@ export async function GET(request: NextRequest) {
               analyses: analyses ? 'EXISTS' : 'EMPTY',
               analysesCount: Array.isArray(analyses) ? (analyses as any[]).length : 0,
               creditResults: creditResults ? 'EXISTS' : 'EMPTY',
+              creditResultsHasUserInfo: creditResults?.results?.user_info ? 'YES' : 'NO',
+              creditResultsUserInfo: creditResults?.results?.user_info || null,
+              creditResultsUnlocked: creditResults?.unlocked || false,
               payments: payments ? 'EXISTS' : 'EMPTY',
               paymentsCount: Array.isArray(payments) ? (payments as any[]).length : 0,
             }
