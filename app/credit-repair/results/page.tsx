@@ -3,7 +3,6 @@
 import { useEffect, useState } from "react";
 import { useSession, signIn } from 'next-auth/react';
 import LetterPreview from "../../components/LetterPreview";
-import SendLetterModal from "../../components/SendLetterModal";
 
 interface DisputeItem {
   account: string;
@@ -81,9 +80,7 @@ const typeColors: Record<string, string> = {
 export default function CreditRepairResultsPage() {
   const { data: session, status } = useSession();
   const [results, setResults] = useState<CreditRepairResult | null>(null);
-  const [sentLetters, setSentLetters] = useState<Set<string>>(new Set());
-  const [modalOpen, setModalOpen] = useState(false);
-  const [activeLetter, setActiveLetter] = useState<LetterInfo | null>(null);
+  const [downloadedLetters, setDownloadedLetters] = useState<Set<string>>(new Set());
   const [expandedItems, setExpandedItems] = useState<Set<number>>(new Set());
   const [lettersUnlocked, setLettersUnlocked] = useState(false);
   const [showAccountPrompt, setShowAccountPrompt] = useState(false);
@@ -190,7 +187,7 @@ export default function CreditRepairResultsPage() {
         },
         body: JSON.stringify({
           product: 'credit_repair_unlock',
-          amount: 799, // $7.99 in cents
+          amount: 999, // $9.99 in cents
           description: `Unlock All ${allLetters.length} Dispute Letters - DebtCrusher.ai`,
           successUrl: `${window.location.origin}/checkout/success?product=credit_repair_unlock`,
           cancelUrl: `${window.location.origin}/checkout/cancel`,
@@ -266,13 +263,8 @@ export default function CreditRepairResultsPage() {
     }
   });
 
-  const openSendModal = (letter: LetterInfo) => {
-    setActiveLetter(letter);
-    setModalOpen(true);
-  };
-
-  const handleLetterSent = (letterTitle: string) => {
-    setSentLetters((prev) => new Set([...prev, letterTitle]));
+  const handleLetterDownload = (letterTitle: string) => {
+    setDownloadedLetters((prev) => new Set([...prev, letterTitle]));
   };
 
   const toggleItem = (idx: number) => {
@@ -284,8 +276,8 @@ export default function CreditRepairResultsPage() {
     });
   };
 
-  const unsentCount = allLetters.filter((l) => !sentLetters.has(l.title)).length;
-  const allSent = unsentCount === 0;
+  const undownloadedCount = allLetters.filter((l) => !downloadedLetters.has(l.title)).length;
+  const allDownloaded = undownloadedCount === 0;
 
   return (
     <div className="min-h-screen py-12">
@@ -428,15 +420,9 @@ export default function CreditRepairResultsPage() {
                           title={`${BUREAU_ADDRESSES[bureau].name} Dispute`}
                           content={item.dispute_letters[bureau]}
                           icon="📊"
-                          isSent={sentLetters.has(`${item.account} — ${BUREAU_ADDRESSES[bureau].name} Dispute`)}
-                          onSendClick={() =>
-                            openSendModal({
-                              key: `item-${idx}-${bureau}`,
-                              title: `${item.account} — ${BUREAU_ADDRESSES[bureau].name} Dispute`,
-                              content: item.dispute_letters[bureau],
-                              icon: "📊",
-                              prefillTo: BUREAU_ADDRESSES[bureau],
-                            })
+                          isSent={downloadedLetters.has(`${item.account} — ${BUREAU_ADDRESSES[bureau].name} Dispute`)}
+                          onDownloadClick={() =>
+                            handleLetterDownload(`${item.account} — ${BUREAU_ADDRESSES[bureau].name} Dispute`)
                           }
                         />
                       ) : null
@@ -447,14 +433,9 @@ export default function CreditRepairResultsPage() {
                         title="Goodwill Letter"
                         content={item.goodwill_letter}
                         icon="🤝"
-                        isSent={sentLetters.has(`${item.account} — Goodwill Letter`)}
-                        onSendClick={() =>
-                          openSendModal({
-                            key: `item-${idx}-goodwill`,
-                            title: `${item.account} — Goodwill Letter`,
-                            content: item.goodwill_letter!,
-                            icon: "🤝",
-                          })
+                        isSent={downloadedLetters.has(`${item.account} — Goodwill Letter`)}
+                        onDownloadClick={() =>
+                          handleLetterDownload(`${item.account} — Goodwill Letter`)
                         }
                       />
                     )}
@@ -464,14 +445,9 @@ export default function CreditRepairResultsPage() {
                         title="Pay-for-Delete Letter"
                         content={item.pay_for_delete_letter}
                         icon="💰"
-                        isSent={sentLetters.has(`${item.account} — Pay-for-Delete Letter`)}
-                        onSendClick={() =>
-                          openSendModal({
-                            key: `item-${idx}-pfd`,
-                            title: `${item.account} — Pay-for-Delete Letter`,
-                            content: item.pay_for_delete_letter!,
-                            icon: "💰",
-                          })
+                        isSent={downloadedLetters.has(`${item.account} — Pay-for-Delete Letter`)}
+                        onDownloadClick={() =>
+                          handleLetterDownload(`${item.account} — Pay-for-Delete Letter`)
                         }
                       />
                     )}
@@ -492,34 +468,85 @@ export default function CreditRepairResultsPage() {
                 We found <span className="text-crusher-blue font-bold">{results.total_disputable} disputable items</span> that could improve your score by <span className="text-crusher-green font-bold">+{results.estimated_total_score_improvement} points</span>.
               </p>
               <p className="text-slate-400 text-sm mb-6">
-                Get all {allLetters.length} dispute letters — FCRA-compliant, personalized, ready to send to Equifax, Experian, and TransUnion.
+                Get all {allLetters.length} dispute letters as downloadable PDFs — FCRA-compliant, personalized, ready to print and mail to Equifax, Experian, and TransUnion.
               </p>
               <button
                 onClick={handleUnlockLetters}
                 className="bg-crusher-blue hover:bg-crusher-blue-dark text-white px-8 py-4 rounded-xl font-bold text-lg transition-all hover:scale-105 shadow-lg shadow-crusher-blue/25"
               >
-                🔓 Unlock All Dispute Letters — $7.99
+                🔓 Unlock All Dispute Letters — $9.99
               </button>
-              <p className="text-slate-500 text-xs mt-3">Includes dispute letters, goodwill letters, and pay-for-delete letters</p>
-            </div>
-          ) : allSent ? (
-            <div className="glass rounded-xl p-5 text-center border border-crusher-green/30">
-              <p className="text-crusher-green font-bold text-lg">✅ All Letters Sent!</p>
-              <p className="text-slate-400 text-sm mt-1">Your certified dispute letters are on their way to the bureaus.</p>
+              <p className="text-slate-500 text-xs mt-3">Includes dispute letters, goodwill letters, and pay-for-delete letters as downloadable PDFs</p>
             </div>
           ) : (
-            <button
-              onClick={() => {
-                const firstUnsent = allLetters.find((l) => !sentLetters.has(l.title));
-                if (firstUnsent) openSendModal(firstUnsent);
-              }}
-              className="w-full bg-gradient-to-r from-crusher-blue to-crusher-green text-white py-4 rounded-xl font-bold text-lg transition-all hover:scale-[1.02] hover:shadow-lg hover:shadow-crusher-blue/25"
-            >
-              📬 Send ALL Disputes via Certified Mail — $39.99
-              <span className="block text-xs font-normal opacity-80 mt-0.5">
-                {sentLetters.size}/{allLetters.length} sent • {unsentCount} remaining • Certified mail to all 3 bureaus
-              </span>
-            </button>
+            <div className="glass rounded-xl p-5 text-center border border-crusher-blue/30">
+              <h3 className="text-xl font-bold text-white mb-3">📄 Download Your Letters</h3>
+              <p className="text-slate-400 mb-4">
+                Your personalized dispute letters are ready to download as PDFs. Print and send them via certified mail yourself, or download all letters in one combined PDF.
+              </p>
+              <div className="flex flex-col sm:flex-row gap-3">
+                <button
+                  onClick={() => {
+                    // Download all letters as one combined PDF
+                    const combinedContent = allLetters.map(letter => 
+                      `${letter.title}\n\n${letter.content}\n\n---\n\n`
+                    ).join('');
+                    
+                    const printWindow = window.open('', '_blank');
+                    if (!printWindow) return;
+                    
+                    printWindow.document.write(`
+                      <html>
+                        <head>
+                          <title>All Dispute Letters</title>
+                          <style>
+                            body { 
+                              font-family: 'Times New Roman', serif; 
+                              margin: 40px; 
+                              line-height: 1.6; 
+                              color: #000;
+                            }
+                            .letter { 
+                              page-break-after: always; 
+                              margin-bottom: 40px; 
+                            }
+                            .letter-title { 
+                              text-align: center; 
+                              font-size: 18px; 
+                              font-weight: bold; 
+                              margin-bottom: 30px; 
+                            }
+                            .letter-content { 
+                              white-space: pre-wrap; 
+                              font-size: 12pt; 
+                            }
+                            @media print {
+                              body { margin: 0.5in; }
+                            }
+                          </style>
+                        </head>
+                        <body>
+                          ${allLetters.map(letter => `
+                            <div class="letter">
+                              <div class="letter-title">${letter.title}</div>
+                              <div class="letter-content">${letter.content}</div>
+                            </div>
+                          `).join('')}
+                        </body>
+                      </html>
+                    `);
+                    printWindow.document.close();
+                    printWindow.print();
+                  }}
+                  className="flex-1 bg-crusher-blue hover:bg-crusher-blue-dark text-white py-3 rounded-xl font-bold transition-all hover:scale-[1.02]"
+                >
+                  📄 Download All Letters as PDF
+                </button>
+              </div>
+              <p className="text-slate-500 text-xs mt-3">
+                Individual letters can be downloaded from the expanded sections above
+              </p>
+            </div>
           )}
         </div>
 
@@ -556,20 +583,7 @@ export default function CreditRepairResultsPage() {
         </div>
       </div>
 
-      {/* Send Letter Modal */}
-      {activeLetter && (
-        <SendLetterModal
-          isOpen={modalOpen}
-          onClose={() => {
-            setModalOpen(false);
-            setActiveLetter(null);
-          }}
-          letterContent={activeLetter.content}
-          letterTitle={activeLetter.title}
-          prefillTo={activeLetter.prefillTo}
-          onSent={handleLetterSent}
-        />
-      )}
+      {/* PDF Download functionality integrated into LetterPreview components */}
     </div>
   );
 }

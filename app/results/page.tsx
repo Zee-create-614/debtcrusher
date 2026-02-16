@@ -3,7 +3,6 @@
 import { useEffect, useState, Suspense } from "react";
 import { useSession, signIn } from 'next-auth/react';
 import LetterPreview from "../components/LetterPreview";
-import SendLetterModal from "../components/SendLetterModal";
 
 interface LineItem {
   code: string;
@@ -92,11 +91,9 @@ function parseCollectorAddress(results: AnalysisResult): { name?: string; addres
 export default function ResultsPage() {
   const { data: session, status } = useSession();
   const [results, setResults] = useState<AnalysisResult | null>(null);
-  const [sentLetters, setSentLetters] = useState<Set<string>>(new Set());
+  const [downloadedLetters, setDownloadedLetters] = useState<Set<string>>(new Set());
   const [scriptUnlocked, setScriptUnlocked] = useState(false);
-  const [modalOpen, setModalOpen] = useState(false);
-  const [activeLetter, setActiveLetter] = useState<LetterInfo | null>(null);
-  const [bulkSending, setBulkSending] = useState(false);
+  const [bulkDownloading, setBulkDownloading] = useState(false);
   const [showAccountPrompt, setShowAccountPrompt] = useState(false);
   const [savedToAccount, setSavedToAccount] = useState(false);
 
@@ -196,7 +193,7 @@ export default function ResultsPage() {
         },
         body: JSON.stringify({
           product: 'script_unlock',
-          amount: 799, // $7.99 in cents
+          amount: 999, // $9.99 in cents
           description: 'Debt Negotiation Script - DebtCrusher.ai',
           successUrl: `${window.location.origin}/checkout/success?product=script_unlock`,
           cancelUrl: `${window.location.origin}/checkout/cancel`,
@@ -243,17 +240,12 @@ export default function ResultsPage() {
     { key: "transunion", title: "Credit Dispute — TransUnion", content: letters.creditDispute.transunion, icon: "📊", prefillTo: BUREAU_ADDRESSES.transunion },
   ];
 
-  const openSendModal = (letter: LetterInfo) => {
-    setActiveLetter(letter);
-    setModalOpen(true);
+  const handleLetterDownload = (letterTitle: string) => {
+    setDownloadedLetters((prev) => new Set([...prev, letterTitle]));
   };
 
-  const handleLetterSent = (letterTitle: string) => {
-    setSentLetters((prev) => new Set([...prev, letterTitle]));
-  };
-
-  const unsentCount = allLetters.filter((l) => !sentLetters.has(l.title)).length;
-  const allSent = unsentCount === 0;
+  const undownloadedCount = allLetters.filter((l) => !downloadedLetters.has(l.title)).length;
+  const allDownloaded = undownloadedCount === 0;
 
   return (
     <div className="min-h-screen py-12">
@@ -448,34 +440,32 @@ export default function ResultsPage() {
                 title={letter.title}
                 content={letter.content}
                 icon={letter.icon}
-                isSent={sentLetters.has(letter.title)}
-                onSendClick={() => openSendModal(letter)}
+                isSent={downloadedLetters.has(letter.title)}
+                onDownloadClick={() => handleLetterDownload(letter.title)}
               />
             ))}
           </div>
 
-          {/* Send ALL Letters Button */}
+          {/* Download All Letters */}
           <div className="mt-6">
-            {allSent ? (
-              <div className="glass rounded-xl p-5 text-center border border-crusher-green/30">
-                <p className="text-crusher-green font-bold text-lg">✅ All Letters Sent!</p>
-                <p className="text-slate-400 text-sm mt-1">Your certified letters are on their way.</p>
-              </div>
-            ) : (
-              <button
-                onClick={() => {
-                  // Open modal for first unsent letter (user sends one at a time)
-                  const firstUnsent = allLetters.find((l) => !sentLetters.has(l.title));
-                  if (firstUnsent) openSendModal(firstUnsent);
-                }}
-                className="w-full bg-gradient-to-r from-crusher-blue to-crusher-green text-white py-4 rounded-xl font-bold text-lg transition-all hover:scale-[1.02] hover:shadow-lg hover:shadow-crusher-blue/25"
-              >
-                📬 Send ALL Letters — $39.99
-                <span className="block text-xs font-normal opacity-80 mt-0.5">
-                  {sentLetters.size}/{allLetters.length} sent • {unsentCount} remaining
-                </span>
-              </button>
-            )}
+            <button
+              onClick={() => {
+                const printWindow = window.open('', '_blank');
+                if (!printWindow) return;
+                const lettersHtml = allLetters.map(l => 
+                  `<div style="page-break-after:always;font-family:serif;padding:40px;max-width:700px;margin:0 auto;">
+                    <h2 style="margin-bottom:20px;">${l.title}</h2>
+                    <pre style="white-space:pre-wrap;font-family:serif;font-size:14px;line-height:1.6;">${l.content}</pre>
+                  </div>`
+                ).join('');
+                printWindow.document.write(`<html><head><title>Dispute Letters - DebtCrusher.ai</title></head><body>${lettersHtml}</body></html>`);
+                printWindow.document.close();
+                printWindow.print();
+              }}
+              className="w-full bg-gradient-to-r from-crusher-blue to-crusher-green text-white py-4 rounded-xl font-bold text-lg transition-all hover:scale-[1.02] hover:shadow-lg hover:shadow-crusher-blue/25"
+            >
+              📄 Download All Letters as PDF
+            </button>
           </div>
         </div>
 
@@ -484,7 +474,7 @@ export default function ResultsPage() {
           <div className="flex items-center justify-between mb-4">
             <h2 className="text-xl font-bold text-white">📞 Phone Negotiation Script</h2>
             {!scriptUnlocked && (
-              <span className="text-xs font-bold px-3 py-1 rounded-full bg-crusher-blue/20 text-crusher-blue">$7.99</span>
+              <span className="text-xs font-bold px-3 py-1 rounded-full bg-crusher-blue/20 text-crusher-blue">$9.99</span>
             )}
           </div>
           {scriptUnlocked ? (
@@ -532,7 +522,7 @@ export default function ResultsPage() {
                     onClick={handleUnlockScript}
                     className="bg-crusher-blue hover:bg-crusher-blue-dark text-white px-6 py-3 rounded-xl font-bold transition-all hover:scale-105 shadow-lg shadow-crusher-blue/25"
                   >
-                    🔓 Unlock Full Script — $7.99
+                    🔓 Unlock Full Script — $9.99
                   </button>
                 </div>
               </div>
@@ -568,17 +558,7 @@ export default function ResultsPage() {
         </div>
       </div>
 
-      {/* Send Letter Modal */}
-      {activeLetter && (
-        <SendLetterModal
-          isOpen={modalOpen}
-          onClose={() => { setModalOpen(false); setActiveLetter(null); }}
-          letterContent={activeLetter.content}
-          letterTitle={activeLetter.title}
-          prefillTo={activeLetter.prefillTo}
-          onSent={handleLetterSent}
-        />
-      )}
+      {/* Send Letter Modal removed - PDF download only */}
     </div>
   );
 }

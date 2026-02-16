@@ -7,12 +7,57 @@ interface LetterPreviewProps {
   content: string;
   icon: string;
   isSent?: boolean;
-  onSendClick?: () => void;
+  onDownloadClick?: () => void;
 }
 
-export default function LetterPreview({ title, content, icon, isSent, onSendClick }: LetterPreviewProps) {
+export default function LetterPreview({ title, content, icon, isSent, onDownloadClick }: LetterPreviewProps) {
   const [expanded, setExpanded] = useState(false);
   const [copied, setCopied] = useState(false);
+
+  const handleDownloadPDF = () => {
+    // Create a new window for printing/PDF generation
+    const printWindow = window.open('', '_blank');
+    if (!printWindow) return;
+    
+    printWindow.document.write(`
+      <html>
+        <head>
+          <title>${title}</title>
+          <style>
+            body { 
+              font-family: 'Times New Roman', serif; 
+              margin: 40px; 
+              line-height: 1.6; 
+              color: #000;
+            }
+            h1 { 
+              text-align: center; 
+              margin-bottom: 30px; 
+              font-size: 18px;
+            }
+            .letter-content { 
+              white-space: pre-wrap; 
+              font-size: 12pt; 
+            }
+            @media print {
+              body { margin: 0.5in; }
+            }
+          </style>
+        </head>
+        <body>
+          <h1>${title}</h1>
+          <div class="letter-content">${content}</div>
+        </body>
+      </html>
+    `);
+    printWindow.document.close();
+    printWindow.print();
+    
+    // Call the callback if provided
+    if (onDownloadClick) {
+      onDownloadClick();
+    }
+  };
 
   const handleCopy = () => {
     navigator.clipboard.writeText(content);
@@ -34,12 +79,12 @@ export default function LetterPreview({ title, content, icon, isSent, onSendClic
           )}
           <span className="text-slate-400 ml-auto">{expanded ? '▲' : '▼'}</span>
         </button>
-        {onSendClick && !isSent && (
+        {onDownloadClick && !isSent && (
           <button
-            onClick={onSendClick}
-            className="ml-3 bg-crusher-green/10 hover:bg-crusher-green/20 text-crusher-green border border-crusher-green/30 px-3 py-1.5 rounded-lg text-xs font-bold transition-all hover:scale-105 whitespace-nowrap"
+            onClick={handleDownloadPDF}
+            className="ml-3 bg-crusher-blue/10 hover:bg-crusher-blue/20 text-crusher-blue border border-crusher-blue/30 px-3 py-1.5 rounded-lg text-xs font-bold transition-all hover:scale-105 whitespace-nowrap"
           >
-            📬 Send — $7.99
+            📄 Download PDF
           </button>
         )}
       </div>
@@ -55,17 +100,13 @@ export default function LetterPreview({ title, content, icon, isSent, onSendClic
             >
               {copied ? "✓ Copied!" : "📋 Copy"}
             </button>
-            <button className="bg-slate-800 hover:bg-slate-700 text-white px-4 py-2 rounded-lg text-sm font-semibold transition-all">
-              📥 Download
+            <button
+              onClick={handleDownloadPDF}
+              className="bg-crusher-blue hover:bg-crusher-blue-dark text-white px-4 py-2 rounded-lg text-sm font-semibold transition-all"
+            >
+              📄 Download PDF
             </button>
-            {onSendClick && !isSent && (
-              <button
-                onClick={onSendClick}
-                className="bg-crusher-green hover:brightness-110 text-black px-4 py-2 rounded-lg text-sm font-bold transition-all"
-              >
-                📬 Send Certified Mail
-              </button>
-            )}
+            {/* Send functionality replaced with PDF download */}
           </div>
         </div>
       )}

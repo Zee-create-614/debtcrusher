@@ -116,7 +116,7 @@ export default function VerifyPage() {
   };
 
   const refundMailto = `mailto:support@debtcrusher.ai?subject=${encodeURIComponent("Money-Back Guarantee Refund Request")}&body=${encodeURIComponent(
-    `Hi DebtCrusher Support,\n\nI'm requesting a refund under the 60-day money-back guarantee.\n\nI disputed ${results?.total_disputed || 0} items and after 60 days, none were removed from my credit report.\n\nPlease process my $7.99 refund.\n\nThank you.`
+    `Hi DebtCrusher Support,\n\nI'm requesting a refund under the 60-day money-back guarantee.\n\nI disputed ${results?.total_disputed || 0} items and after 60 days, none were removed from my credit report.\n\nPlease process my $9.99 refund.\n\nThank you.`
   )}`;
 
   if (step === "loading") {
@@ -252,7 +252,7 @@ export default function VerifyPage() {
               <span className="text-5xl block mb-4">🛡️</span>
               <h3 className="text-2xl font-black text-white mb-2">Money-Back Guarantee</h3>
               <p className="text-slate-400 mb-4">
-                We weren&apos;t able to get at least 1 item removed from your credit report after 60 days. You&apos;re eligible for a full <span className="text-white font-bold">$7.99 refund</span>.
+                We weren&apos;t able to get at least 1 item removed from your credit report after 60 days. You&apos;re eligible for a full <span className="text-white font-bold">$9.99 refund</span>.
               </p>
               <a
                 href={refundMailto}
@@ -404,7 +404,7 @@ export default function VerifyPage() {
         {/* Money-back info */}
         <div className="glass rounded-xl p-5 text-center mt-6 border border-yellow-500/20">
           <p className="text-slate-400 text-sm">
-            🛡️ <span className="text-white font-semibold">60-Day Money-Back Guarantee:</span> If none of your disputed items were removed after 60 days, you&apos;re eligible for a full $7.99 refund.
+            🛡️ <span className="text-white font-semibold">60-Day Money-Back Guarantee:</span> If none of your disputed items were removed after 60 days, you&apos;re eligible for a full $9.99 refund.
           </p>
         </div>
       </div>

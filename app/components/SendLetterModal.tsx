@@ -180,7 +180,7 @@ export default function SendLetterModal({ isOpen, onClose, letterContent, letter
               <div className="bg-slate-800/50 rounded-xl p-4">
                 <div className="flex items-center justify-between mb-2">
                   <span className="text-white font-semibold text-sm">Certified Mail via USPS</span>
-                  <span className="text-crusher-green font-black text-lg">$7.99</span>
+                  <span className="text-crusher-green font-black text-lg">$9.99</span>
                 </div>
                 <p className="text-slate-500 text-xs">Includes printing, postage, certified mail tracking, and delivery confirmation.</p>
                 <div className="mt-3 p-3 bg-yellow-500/10 border border-yellow-500/20 rounded-lg">
@@ -215,7 +215,7 @@ export default function SendLetterModal({ isOpen, onClose, letterContent, letter
                   ← Edit
                 </button>
                 <button onClick={handleSend} className="flex-1 bg-crusher-green hover:brightness-110 text-black py-3 rounded-xl font-bold transition-all hover:scale-[1.02]">
-                  📬 Send — $7.99
+                  📬 Send — $9.99
                 </button>
               </div>
             </div>
