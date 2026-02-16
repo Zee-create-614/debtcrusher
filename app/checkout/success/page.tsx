@@ -50,6 +50,16 @@ function CheckoutSuccessContent() {
           sessionStorage.setItem('debtcrusher_unlocked', product);
         }
 
+        // Fire Google Ads conversion
+        if (typeof window !== 'undefined' && (window as any).gtag) {
+          (window as any).gtag('event', 'conversion', {
+            send_to: 'AW-17957953316/purchase',
+            value: product === 'credit_repair_unlock' ? 25.0 : 9.99,
+            currency: 'USD',
+            transaction_id: transactionId,
+          });
+        }
+
         setSaved(true);
       } catch (error) {
         console.error('Error saving payment:', error);
