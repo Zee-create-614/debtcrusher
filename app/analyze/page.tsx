@@ -15,7 +15,7 @@ export default function AnalyzePage() {
   const { data: session, status } = useSession();
   const [mode, setMode] = useState<Mode>("upload");
   const [loading, setLoading] = useState(false);
-  const [consented, setConsented] = useState(false);
+  const [consented] = useState(true); // Consent given at account signup
 
   // Redirect to signin if not authenticated
   useEffect(() => {
@@ -168,7 +168,7 @@ export default function AnalyzePage() {
           ))}
         </div>
 
-        <AnalysisDisclaimer onConsentChange={setConsented} isConsented={consented} />
+        {/* Disclaimer removed — consent given at account signup */}
 
         <div className="glass-strong rounded-2xl p-8 animate-fade-in-up-delay">
           {/* Upload Mode */}

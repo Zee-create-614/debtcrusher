@@ -43,7 +43,7 @@ export default function CreditRepairPage() {
   const [loading, setLoading] = useState(false);
   const [loadingStatus, setLoadingStatus] = useState("");
   const [state, setState] = useState("");
-  const [consented, setConsented] = useState(false);
+  const [consented] = useState(true); // Consent already given at signup
 
   // Redirect to signin if not authenticated
   useEffect(() => {
@@ -222,7 +222,7 @@ export default function CreditRepairPage() {
           ))}
         </div>
 
-        <AnalysisDisclaimer onConsentChange={setConsented} isConsented={consented} />
+        {/* Disclaimer removed — consent given at account signup */}
 
         <div className="glass-strong rounded-2xl p-8 animate-fade-in-up-delay">
           {/* State selector — only for manual/paste modes */}
