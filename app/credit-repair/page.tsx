@@ -1,6 +1,7 @@
 "use client";
 
-import { useState } from "react";
+import { useState, useEffect } from "react";
+import { useSession } from "next-auth/react";
 import FileUpload from "../components/FileUpload";
 import StateSelector from "../components/StateSelector";
 import AnalysisDisclaimer from "../components/AnalysisDisclaimer";
@@ -37,11 +38,20 @@ const emptyItem = (): NegativeItem => ({
 
 export default function CreditRepairPage() {
   const router = useRouter();
+  const { data: session, status } = useSession();
   const [mode, setMode] = useState<Mode>("upload");
   const [loading, setLoading] = useState(false);
   const [loadingStatus, setLoadingStatus] = useState("");
   const [state, setState] = useState("");
   const [consented, setConsented] = useState(false);
+
+  // Redirect to signin if not authenticated
+  useEffect(() => {
+    if (status === "loading") return; // Still loading
+    if (!session) {
+      router.push("/auth/signin?callbackUrl=/credit-repair");
+    }
+  }, [session, status, router]);
 
   // Upload mode
   const [, setFile] = useState<File | null>(null);
@@ -166,6 +176,24 @@ export default function CreditRepairPage() {
         : items.some((i) => i.accountName.trim()));
 
   const accountTypes: AccountType[] = ["Collections", "Late Payment", "Charge-off", "Bankruptcy", "Inquiry", "Other"];
+
+  // Show loading screen while checking auth
+  if (status === "loading") {
+    return (
+      <div className="min-h-screen flex items-center justify-center">
+        <div className="text-white">Loading...</div>
+      </div>
+    );
+  }
+
+  // If not authenticated, will redirect via useEffect
+  if (!session) {
+    return (
+      <div className="min-h-screen flex items-center justify-center">
+        <div className="text-white">Redirecting to sign in...</div>
+      </div>
+    );
+  }
 
   return (
     <div className="min-h-screen py-12">

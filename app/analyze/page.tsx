@@ -1,6 +1,7 @@
 "use client";
 
-import { useState } from "react";
+import { useState, useEffect } from "react";
+import { useSession } from "next-auth/react";
 import FileUpload from "../components/FileUpload";
 import StateSelector from "../components/StateSelector";
 import AnalysisDisclaimer from "../components/AnalysisDisclaimer";
@@ -11,9 +12,18 @@ type DebtType = "Medical" | "Credit Card" | "Student Loan" | "Auto" | "Collectio
 
 export default function AnalyzePage() {
   const router = useRouter();
+  const { data: session, status } = useSession();
   const [mode, setMode] = useState<Mode>("upload");
   const [loading, setLoading] = useState(false);
   const [consented, setConsented] = useState(false);
+
+  // Redirect to signin if not authenticated
+  useEffect(() => {
+    if (status === "loading") return; // Still loading
+    if (!session) {
+      router.push("/auth/signin?callbackUrl=/analyze");
+    }
+  }, [session, status, router]);
 
   // Upload mode
   const [, setFile] = useState<File | null>(null);
@@ -110,6 +120,24 @@ export default function AnalyzePage() {
     { key: "text", label: "Paste Text", icon: "📋" },
     { key: "describe", label: "Describe It", icon: "✏️" },
   ];
+
+  // Show loading screen while checking auth
+  if (status === "loading") {
+    return (
+      <div className="min-h-screen flex items-center justify-center">
+        <div className="text-white">Loading...</div>
+      </div>
+    );
+  }
+
+  // If not authenticated, will redirect via useEffect
+  if (!session) {
+    return (
+      <div className="min-h-screen flex items-center justify-center">
+        <div className="text-white">Redirecting to sign in...</div>
+      </div>
+    );
+  }
 
   return (
     <div className="min-h-screen py-12">

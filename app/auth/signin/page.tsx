@@ -18,6 +18,7 @@ function SignInInner() {
   const [loading, setLoading] = useState(false)
   const [error, setError] = useState('')
   const [sent, setSent] = useState(false)
+  const [consentChecked, setConsentChecked] = useState(false)
   const router = useRouter()
   const searchParams = useSearchParams()
   const callbackUrl = searchParams.get('callbackUrl') || '/'
@@ -41,11 +42,21 @@ function SignInInner() {
       return
     }
 
+    if (!consentChecked) {
+      setError('Please agree to the Terms of Service, Privacy Policy, and Disclaimer')
+      setLoading(false)
+      return
+    }
+
     try {
       const res = await fetch('/api/auth/magic', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ email, callbackUrl }),
+        body: JSON.stringify({ 
+          email, 
+          callbackUrl,
+          consentTimestamp: new Date().toISOString()
+        }),
       })
 
       if (!res.ok) {
@@ -144,22 +155,44 @@ function SignInInner() {
               </div>
             )}
 
-            <button
-              type="submit"
-              disabled={loading}
-              className="w-full bg-green-600 hover:bg-green-500 disabled:opacity-50 text-white py-3 rounded-lg font-medium transition-colors"
-            >
-              {loading ? 'Sending link...' : 'Send Sign-In Link'}
-            </button>
-          </form>
+            <div className="space-y-4">
+              <div className="flex items-start gap-3 bg-gray-700/30 border border-gray-600/50 rounded-lg p-4">
+                <input
+                  id="consent"
+                  type="checkbox"
+                  checked={consentChecked}
+                  onChange={(e) => setConsentChecked(e.target.checked)}
+                  className="mt-1 w-4 h-4 text-green-600 bg-gray-700 border-gray-600 rounded focus:ring-green-500 focus:ring-2"
+                  required
+                />
+                <div>
+                  <label htmlFor="consent" className="text-sm text-gray-300 cursor-pointer">
+                    I agree to the{' '}
+                    <a href="/terms" target="_blank" className="text-green-400 hover:text-green-300 underline">
+                      Terms of Service
+                    </a>
+                    ,{' '}
+                    <a href="/privacy" target="_blank" className="text-green-400 hover:text-green-300 underline">
+                      Privacy Policy
+                    </a>
+                    , and{' '}
+                    <a href="/disclaimer" target="_blank" className="text-green-400 hover:text-green-300 underline">
+                      Disclaimer
+                    </a>
+                    . I understand DebtCrusher.ai provides educational tools and templates, not legal advice or credit repair services.
+                  </label>
+                </div>
+              </div>
 
-          <div className="text-center text-xs text-gray-500 space-y-1">
-            <p>By signing in, you agree to our</p>
-            <p>
-              <a href="/terms" className="text-green-400 hover:text-green-300">Terms of Service</a> and{' '}
-              <a href="/privacy" className="text-green-400 hover:text-green-300">Privacy Policy</a>
-            </p>
-          </div>
+              <button
+                type="submit"
+                disabled={loading || !consentChecked}
+                className="w-full bg-green-600 hover:bg-green-500 disabled:opacity-50 text-white py-3 rounded-lg font-medium transition-colors"
+              >
+                {loading ? 'Sending link...' : 'Send Sign-In Link'}
+              </button>
+            </div>
+          </form>
         </div>
       </div>
     </div>
