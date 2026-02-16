@@ -26,7 +26,7 @@ export default function Home() {
                 Analyze My Bill Free →
               </a>
               <a href="/credit-repair" className="bg-crusher-green hover:bg-green-600 text-white px-8 py-4 rounded-xl font-bold text-lg transition-all hover:scale-105">
-                Fix My Credit Free →
+                Analyze My Credit Free →
               </a>
             </div>
             <MoneyBackBadge />
@@ -112,7 +112,7 @@ export default function Home() {
                 ))}
               </ul>
               <a href="/credit-repair" className="inline-block bg-crusher-green hover:bg-green-600 text-white px-6 py-3 rounded-xl font-bold transition-all hover:scale-105">
-                Fix My Credit →
+                Analyze My Credit →
               </a>
             </div>
 
