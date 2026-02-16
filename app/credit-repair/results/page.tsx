@@ -270,6 +270,10 @@ export default function CreditRepairResultsPage() {
     const dataToSave = analysisData || results;
     if (!dataToSave) return;
 
+    // Personalize letters before saving so dashboard shows clean data
+    const userInfo = (dataToSave as any).user_info;
+    const personalizedData = userInfo ? personalizeResults(dataToSave, userInfo) : dataToSave;
+
     try {
       const response = await fetch('/api/user/analyses', {
         method: 'POST',
@@ -278,9 +282,9 @@ export default function CreditRepairResultsPage() {
         },
         body: JSON.stringify({
           type: 'credit',
-          summary: `Credit repair analysis - ${dataToSave.total_disputable} disputable items found`,
-          itemsDisputed: dataToSave.total_disputable,
-          results: dataToSave,
+          summary: `Credit repair analysis - ${personalizedData.total_disputable} disputable items found`,
+          itemsDisputed: personalizedData.total_disputable,
+          results: personalizedData,
         }),
       });
 
