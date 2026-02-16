@@ -2,103 +2,72 @@
 
 import { useEffect, useState, Suspense } from 'react';
 import { useRouter, useSearchParams } from 'next/navigation';
+import { useSession } from 'next-auth/react';
 import { CheckCircle } from 'lucide-react';
 
 function CheckoutSuccessContent() {
   const router = useRouter();
   const searchParams = useSearchParams();
-  const [countdown, setCountdown] = useState(2);
-
-  const logCreditRepairDispute = async (paymentId: string, userEmail: string) => {
-    try {
-      // Get credit repair results from sessionStorage
-      const creditRepairResults = sessionStorage.getItem('creditRepairResults');
-      if (!creditRepairResults) {
-        console.warn('No credit repair results found for logging');
-        return;
-      }
-
-      const results = JSON.parse(creditRepairResults);
-      if (!results.items || !Array.isArray(results.items)) {
-        console.warn('Invalid credit repair results format');
-        return;
-      }
-
-      // Calculate total letters generated
-      let lettersGenerated = 0;
-      results.items.forEach((item: any) => {
-        // Count bureau dispute letters
-        if (item.dispute_letters) {
-          ['equifax', 'experian', 'transunion'].forEach(bureau => {
-            if (item.dispute_letters[bureau]) lettersGenerated++;
-          });
-        }
-        // Count additional letters
-        if (item.goodwill_letter) lettersGenerated++;
-        if (item.pay_for_delete_letter) lettersGenerated++;
-      });
-
-      // Prepare disputed items for logging
-      const disputedItems = results.items.map((item: any) => ({
-        account: item.account,
-        type: item.type,
-        balance: item.balance,
-        dispute_reason: item.dispute_reason,
-        dispute_type: item.dispute_type,
-        confidence: item.confidence,
-        estimated_score_impact: item.estimated_score_impact,
-      }));
-
-      // Log the dispute
-      const response = await fetch('/api/credit-repair/log', {
-        method: 'POST',
-        headers: {
-          'Content-Type': 'application/json',
-        },
-        body: JSON.stringify({
-          paymentId,
-          disputedItems,
-          disputeType: 'bureau_disputes', // Primary dispute type for unlocked letters
-          lettersGenerated,
-        }),
-      });
-
-      if (!response.ok) {
-        console.error('Failed to log credit repair dispute:', await response.text());
-      } else {
-        console.log('Credit repair dispute logged successfully');
-      }
-    } catch (error) {
-      console.error('Error logging credit repair dispute:', error);
-    }
-  };
+  const { data: session } = useSession();
+  const [countdown, setCountdown] = useState(3);
+  const [saved, setSaved] = useState(false);
 
   const product = searchParams.get('product');
   const sessionId = searchParams.get('sessionId');
-  const userEmail = searchParams.get('userEmail');
   const transactionId = searchParams.get('transactionId') || searchParams.get('checkoutId') || sessionId || 'square-payment';
 
   useEffect(() => {
-    // Store unlock state in sessionStorage
-    if (product) {
-      sessionStorage.setItem('debtcrusher_unlocked', product);
-    }
+    if (!session?.user?.email) return;
+    if (saved) return;
 
-    // Log credit repair dispute if this was a credit repair purchase
-    if (product === 'credit_repair_unlock' && sessionId && userEmail) {
-      logCreditRepairDispute(sessionId, userEmail);
-    }
+    const savePaymentAndUnlock = async () => {
+      try {
+        // 1. Record payment in Redis
+        await fetch('/api/user/payments', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({
+            id: transactionId,
+            amount: product === 'credit_repair_unlock' ? 0.10 : 9.99,
+            currency: 'USD',
+            status: 'COMPLETED',
+            note: getProductName(product),
+            product: product,
+          }),
+        });
 
-    // Countdown and redirect
+        // 2. If credit repair, unlock the letters in Redis
+        if (product === 'credit_repair_unlock' || product === 'letters_unlock') {
+          await fetch('/api/user/credit-repair-results', {
+            method: 'PATCH',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({ unlocked: true }),
+          });
+        }
+
+        // 3. Also set sessionStorage as backup
+        if (product) {
+          sessionStorage.setItem('debtcrusher_unlocked', product);
+        }
+
+        setSaved(true);
+      } catch (error) {
+        console.error('Error saving payment:', error);
+        setSaved(true); // Don't block redirect
+      }
+    };
+
+    savePaymentAndUnlock();
+  }, [session, saved]);
+
+  useEffect(() => {
+    if (!saved) return;
+
     const timer = setInterval(() => {
       setCountdown((prev) => {
         if (prev <= 1) {
           clearInterval(timer);
-          
-          // Redirect based on product type
-          const redirectUrl = getRedirectUrl(product);
-          router.push(redirectUrl);
-          
+          router.push(getRedirectUrl(product));
           return 0;
         }
         return prev - 1;
@@ -106,7 +75,7 @@ function CheckoutSuccessContent() {
     }, 1000);
 
     return () => clearInterval(timer);
-  }, [product, router]);
+  }, [saved, product, router]);
 
   const getRedirectUrl = (productType: string | null) => {
     switch (productType) {
@@ -162,21 +131,18 @@ function CheckoutSuccessContent() {
 
         <div className="bg-blue-50 p-4 rounded-lg">
           <p className="text-blue-800 font-medium">
-            Redirecting you back in {countdown} seconds...
+            {saved ? `Redirecting in ${countdown} seconds...` : 'Saving your purchase...'}
           </p>
           <div className="w-full bg-blue-200 rounded-full h-2 mt-2">
             <div 
               className="bg-blue-500 h-2 rounded-full transition-all duration-1000"
-              style={{ width: `${((2 - countdown) / 2) * 100}%` }}
+              style={{ width: saved ? `${((3 - countdown) / 3) * 100}%` : '0%' }}
             />
           </div>
         </div>
 
         <button
-          onClick={() => {
-            const redirectUrl = getRedirectUrl(product);
-            router.push(redirectUrl);
-          }}
+          onClick={() => router.push(getRedirectUrl(product))}
           className="mt-4 text-blue-600 underline hover:text-blue-800"
         >
           Continue now

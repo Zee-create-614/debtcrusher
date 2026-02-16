@@ -51,7 +51,7 @@ export async function POST(request: NextRequest) {
         locationId: locationId,
       },
       checkoutOptions: {
-        redirectUrl: `${successUrl}?product=${product}&sessionId=${checkoutSessionId}`,
+        redirectUrl: `${successUrl}?product=${product}&sessionId=${checkoutSessionId}${userEmail ? '&userEmail=' + encodeURIComponent(userEmail) : ''}`,
       },
     });
 
