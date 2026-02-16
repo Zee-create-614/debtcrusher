@@ -1,9 +1,9 @@
-import path from 'path';
-import fs from 'fs';
+import { Redis } from '@upstash/redis'
 
-// Use /tmp on Vercel (serverless), or local data dir in dev
-const dataDir = process.env.VERCEL ? '/tmp' : path.join(process.cwd(), 'data');
-const dbPath = path.join(dataDir, 'credit_repair_logs.json');
+const redis = new Redis({
+  url: process.env.UPSTASH_REDIS_REST_URL!,
+  token: process.env.UPSTASH_REDIS_REST_TOKEN!,
+})
 
 export interface CreditRepairLog {
   id: number;
@@ -26,31 +26,30 @@ export interface DisputedItem {
   estimated_score_impact: number;
 }
 
-function readLogs(): CreditRepairLog[] {
+const LOGS_KEY = 'credit_repair_logs'
+
+async function readLogs(): Promise<CreditRepairLog[]> {
   try {
-    if (fs.existsSync(dbPath)) {
-      return JSON.parse(fs.readFileSync(dbPath, 'utf-8'));
-    }
-  } catch {}
-  return [];
+    const logs = await redis.get<CreditRepairLog[]>(LOGS_KEY)
+    return logs || []
+  } catch {
+    return []
+  }
 }
 
-function writeLogs(logs: CreditRepairLog[]): void {
-  if (!fs.existsSync(dataDir)) {
-    fs.mkdirSync(dataDir, { recursive: true });
-  }
-  fs.writeFileSync(dbPath, JSON.stringify(logs, null, 2));
+async function writeLogs(logs: CreditRepairLog[]): Promise<void> {
+  await redis.set(LOGS_KEY, logs)
 }
 
 export const creditRepairDb = {
-  logCreditRepairDispute: (
+  logCreditRepairDispute: async (
     userEmail: string,
     paymentId: string | null,
     disputedItems: DisputedItem[],
     disputeType: 'bureau_disputes' | 'goodwill' | 'pay_for_delete',
     lettersGenerated: number
-  ): void => {
-    const logs = readLogs();
+  ): Promise<void> => {
+    const logs = await readLogs();
     const now = new Date();
     const refundDate = new Date(now.getTime() + 60 * 24 * 60 * 60 * 1000);
     logs.push({
@@ -63,20 +62,23 @@ export const creditRepairDb = {
       created_at: now.toISOString(),
       refund_eligible_until: refundDate.toISOString(),
     });
-    writeLogs(logs);
+    await writeLogs(logs);
   },
 
-  getCreditRepairLogsByUser: (userEmail: string): CreditRepairLog[] => {
-    return readLogs().filter(l => l.user_email === userEmail);
+  getCreditRepairLogsByUser: async (userEmail: string): Promise<CreditRepairLog[]> => {
+    const logs = await readLogs();
+    return logs.filter(l => l.user_email === userEmail);
   },
 
-  getCreditRepairLogByPaymentId: (paymentId: string): CreditRepairLog | undefined => {
-    return readLogs().find(l => l.payment_id === paymentId);
+  getCreditRepairLogByPaymentId: async (paymentId: string): Promise<CreditRepairLog | undefined> => {
+    const logs = await readLogs();
+    return logs.find(l => l.payment_id === paymentId);
   },
 
-  getEligibleRefunds: (): CreditRepairLog[] => {
+  getEligibleRefunds: async (): Promise<CreditRepairLog[]> => {
     const now = new Date().toISOString();
-    return readLogs().filter(l => l.refund_eligible_until > now);
+    const logs = await readLogs();
+    return logs.filter(l => l.refund_eligible_until > now);
   },
 
   parseDisputedItems: (log: CreditRepairLog): DisputedItem[] => {

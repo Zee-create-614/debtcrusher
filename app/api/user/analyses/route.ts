@@ -1,10 +1,7 @@
 import { NextRequest, NextResponse } from 'next/server'
 import { getServerSession } from 'next-auth'
 import { authOptions } from '../../auth/[...nextauth]/route'
-import fs from 'fs'
-import path from 'path'
-
-const DATA_FILE = '/tmp/debtcrusher-users.json'
+import { redis } from '../../../lib/redis'
 
 interface Analysis {
   id: string
@@ -20,33 +17,8 @@ interface Analysis {
   results?: any
 }
 
-interface UserData {
-  email: string
-  analyses: Analysis[]
-}
-
-interface UsersDatabase {
-  [email: string]: UserData
-}
-
-function readUserData(): UsersDatabase {
-  try {
-    if (fs.existsSync(DATA_FILE)) {
-      const data = fs.readFileSync(DATA_FILE, 'utf8')
-      return JSON.parse(data)
-    }
-  } catch (error) {
-    console.error('Error reading user data:', error)
-  }
-  return {}
-}
-
-function writeUserData(data: UsersDatabase) {
-  try {
-    fs.writeFileSync(DATA_FILE, JSON.stringify(data, null, 2))
-  } catch (error) {
-    console.error('Error writing user data:', error)
-  }
+function redisKey(email: string) {
+  return `user:analyses:${email}`
 }
 
 export async function GET(request: NextRequest) {
@@ -57,10 +29,9 @@ export async function GET(request: NextRequest) {
       return NextResponse.json({ error: 'Unauthorized' }, { status: 401 })
     }
 
-    const userData = readUserData()
-    const userAnalyses = userData[session.user.email]?.analyses || []
+    const analyses = await redis.get<Analysis[]>(redisKey(session.user.email))
 
-    return NextResponse.json({ analyses: userAnalyses })
+    return NextResponse.json({ analyses: analyses || [] })
   } catch (error) {
     console.error('Error fetching analyses:', error)
     return NextResponse.json({ error: 'Internal server error' }, { status: 500 })
@@ -87,22 +58,15 @@ export async function POST(request: NextRequest) {
       itemsDisputed,
       results,
       refundEligible: true,
-      refundDeadline: new Date(Date.now() + 60 * 24 * 60 * 60 * 1000).toISOString(), // 60 days from now
+      refundDeadline: new Date(Date.now() + 60 * 24 * 60 * 60 * 1000).toISOString(),
       lettersSent: [],
       letterStatus: 'pending'
     }
 
-    const userData = readUserData()
-    
-    if (!userData[session.user.email]) {
-      userData[session.user.email] = {
-        email: session.user.email,
-        analyses: []
-      }
-    }
-
-    userData[session.user.email].analyses.push(newAnalysis)
-    writeUserData(userData)
+    const key = redisKey(session.user.email)
+    const existing = await redis.get<Analysis[]>(key) || []
+    existing.push(newAnalysis)
+    await redis.set(key, existing)
 
     return NextResponse.json({ success: true, analysis: newAnalysis })
   } catch (error) {

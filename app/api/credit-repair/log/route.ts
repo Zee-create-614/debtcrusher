@@ -58,7 +58,7 @@ export async function POST(request: NextRequest) {
     }));
 
     // Log the credit repair dispute
-    creditRepairDb.logCreditRepairDispute(
+    await creditRepairDb.logCreditRepairDispute(
       session.user.email,
       paymentId || null,
       sanitizedItems,

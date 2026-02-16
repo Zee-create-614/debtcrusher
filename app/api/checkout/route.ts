@@ -29,7 +29,7 @@ export async function POST(request: NextRequest) {
     });
 
     const body = await request.json();
-    const { product, amount, description, successUrl, cancelUrl } = body;
+    const { product, amount, description, successUrl, cancelUrl, userEmail } = body;
 
     if (!product || !amount || !description || !successUrl || !cancelUrl) {
       return NextResponse.json({ error: 'Missing required fields' }, { status: 400 });
@@ -40,6 +40,8 @@ export async function POST(request: NextRequest) {
 
     const response = await client.checkout.paymentLinks.create({
       idempotencyKey: randomUUID(),
+      prePopulatedData: userEmail ? { buyerEmail: userEmail } : undefined,
+      description: userEmail ? `DebtCrusher | ${userEmail} | ${product}` : `DebtCrusher | ${product}`,
       quickPay: {
         name: description,
         priceMoney: {
