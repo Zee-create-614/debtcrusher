@@ -1,11 +1,8 @@
 "use client";
 
-import { useState } from "react";
 import PricingCard from "../components/PricingCard";
 
 export default function PricingPage() {
-  const [annual, setAnnual] = useState(false);
-
   return (
     <div className="min-h-screen py-24">
       <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
@@ -14,24 +11,8 @@ export default function PricingPage() {
             Simple, <span className="text-crusher-blue">Fair</span> Pricing
           </h1>
           <p className="text-slate-400 text-lg max-w-xl mx-auto mb-8">
-            No hidden fees. No tricks. If we don&apos;t find savings, you don&apos;t pay.
+            No subscriptions. No hidden fees. Pay once, get results.
           </p>
-
-          {/* Toggle */}
-          <div className="inline-flex items-center gap-3 bg-slate-900 rounded-xl p-1">
-            <button
-              onClick={() => setAnnual(false)}
-              className={`px-5 py-2 rounded-lg font-semibold text-sm transition-all ${!annual ? 'bg-crusher-blue text-white' : 'text-slate-400'}`}
-            >
-              Monthly
-            </button>
-            <button
-              onClick={() => setAnnual(true)}
-              className={`px-5 py-2 rounded-lg font-semibold text-sm transition-all ${annual ? 'bg-crusher-blue text-white' : 'text-slate-400'}`}
-            >
-              Annual <span className="text-crusher-green text-xs">Save 32%</span>
-            </button>
-          </div>
         </div>
 
         <div className="grid grid-cols-1 md:grid-cols-2 gap-8 max-w-4xl mx-auto mb-24">
@@ -62,22 +43,6 @@ export default function PricingPage() {
               "60-day money-back guarantee",
             ]}
             cta="Fix My Credit"
-          />
-          <PricingCard
-            name="Unlimited Crusher"
-            price={annual ? "$33" : "$49"}
-            period={annual ? "/mo (billed annually at $399)" : "/month"}
-            description="Unlimited analyses + complete collections defense"
-            features={[
-              "Everything in Single Analysis",
-              "Unlimited bill analyses",
-              "Collections defense toolkit",
-              "FDCPA violation detection & reports",
-              "Credit bureau dispute letters (all 3)",
-              "Priority AI processing",
-              "Email support",
-            ]}
-            cta="Start Crushing"
             highlighted
             badge="MOST POPULAR"
           />
@@ -91,30 +56,31 @@ export default function PricingPage() {
               <thead>
                 <tr className="border-b border-slate-700">
                   <th className="text-left p-4 text-slate-400 text-sm font-medium">Feature</th>
-                  <th className="p-4 text-white text-sm font-semibold text-center">Single ($25)</th>
-                  <th className="p-4 text-crusher-blue text-sm font-semibold text-center">Unlimited ({annual ? "$33" : "$49"}/mo)</th>
+                  <th className="p-4 text-white text-sm font-semibold text-center">Bill Analysis ($9.99)</th>
+                  <th className="p-4 text-crusher-blue text-sm font-semibold text-center">Credit Repair ($25)</th>
                 </tr>
               </thead>
               <tbody className="text-sm">
                 {[
-                  ["Bill error analysis", true, true],
+                  ["AI-powered analysis", true, true],
                   ["Dispute letter generation", true, true],
-                  ["Settlement letters", true, true],
-                  ["Negotiation scripts", true, true],
+                  ["Settlement letters", true, false],
+                  ["Negotiation scripts", true, false],
                   ["Statute of limitations check", true, true],
-                  ["Number of analyses", "1", "Unlimited"],
-                  ["FDCPA violation reports", false, true],
-                  ["Credit bureau dispute letters", false, true],
-                  ["Priority processing", false, true],
+                  ["Credit bureau dispute letters (3 bureaus)", false, true],
+                  ["Goodwill letters", false, true],
+                  ["Pay-for-delete letters", false, true],
+                  ["FCRA violation detection", false, true],
+                  ["Personalized with your info", false, true],
                   ["Money-back guarantee", true, true],
-                ].map(([feature, single, unlimited], i) => (
+                ].map(([feature, bill, credit], i) => (
                   <tr key={i} className="border-b border-slate-800/50">
                     <td className="p-4 text-slate-300">{feature as string}</td>
                     <td className="p-4 text-center">
-                      {typeof single === "boolean" ? (single ? <span className="text-crusher-green">✓</span> : <span className="text-slate-600">—</span>) : <span className="text-white">{single as string}</span>}
+                      {typeof bill === "boolean" ? (bill ? <span className="text-crusher-green">✓</span> : <span className="text-slate-600">—</span>) : <span className="text-white">{bill as string}</span>}
                     </td>
                     <td className="p-4 text-center">
-                      {typeof unlimited === "boolean" ? (unlimited ? <span className="text-crusher-green">✓</span> : <span className="text-slate-600">—</span>) : <span className="text-white font-semibold">{unlimited as string}</span>}
+                      {typeof credit === "boolean" ? (credit ? <span className="text-crusher-green">✓</span> : <span className="text-slate-600">—</span>) : <span className="text-white font-semibold">{credit as string}</span>}
                     </td>
                   </tr>
                 ))}
@@ -128,9 +94,9 @@ export default function PricingPage() {
           <h2 className="text-2xl font-black text-white text-center mb-8">Pricing FAQ</h2>
           <div className="space-y-4">
             {[
-              { q: "How does the money-back guarantee work?", a: "If our analysis doesn't find any errors, overcharges, or actionable savings opportunities in your bill, we refund your $25 in full. No questions asked, no fine print." },
-              { q: "Can I cancel the unlimited plan anytime?", a: "Yes. Cancel anytime from your account dashboard. You'll keep access through the end of your billing period. No cancellation fees." },
-              { q: "What counts as an 'analysis'?", a: "Each bill, collection notice, or debt description you submit counts as one analysis. The unlimited plan lets you submit as many as you need." },
+              { q: "How does the money-back guarantee work?", a: "If our analysis doesn't find any errors, overcharges, or actionable items, we refund you in full. No questions asked, no fine print." },
+              { q: "Is this a subscription?", a: "No. You pay once per analysis. No recurring charges, no subscriptions, no surprises." },
+              { q: "What do I get with Credit Repair?", a: "Upload your credit report and our AI analyzes every negative item, then generates personalized dispute letters for all 3 bureaus (Equifax, Experian, TransUnion) plus goodwill and pay-for-delete letters — ready to print and mail." },
               { q: "Do you store my payment information?", a: "We use Square for payment processing. We never see or store your full card number. All transactions are encrypted and secure." },
             ].map((faq, i) => (
               <details key={i} className="glass rounded-xl group">
