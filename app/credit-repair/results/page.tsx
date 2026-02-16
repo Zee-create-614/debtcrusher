@@ -176,7 +176,7 @@ export default function CreditRepairResultsPage() {
         // Auto-save if user is logged in
         if (session?.user?.email) {
           saveToServer(parsed);
-          saveToAccount(parsed);
+          saveToAccount(personalizedResults);
         } else {
           // Show account prompt after 3 seconds if not logged in
           setTimeout(() => setShowAccountPrompt(true), 3000);
