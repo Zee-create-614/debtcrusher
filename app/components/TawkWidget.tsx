@@ -2,14 +2,15 @@
 
 import { useEffect } from "react";
 
-const TAWK_ID = "6992090c21c0731c38d19e02";
+const TAWK_PROPERTY_ID = "6992090c21c0731c38df9e02";
+const TAWK_WIDGET_ID = "1jhh76m2t";
 
 export default function TawkWidget() {
   useEffect(() => {
-    if (!TAWK_ID) return;
+    if (!TAWK_PROPERTY_ID) return;
     const s1 = document.createElement("script");
     s1.async = true;
-    s1.src = `https://embed.tawk.to/${TAWK_ID}/default`;
+    s1.src = `https://embed.tawk.to/${TAWK_PROPERTY_ID}/${TAWK_WIDGET_ID}`;
     s1.charset = "UTF-8";
     s1.setAttribute("crossorigin", "*");
     document.head.appendChild(s1);
@@ -18,7 +19,7 @@ export default function TawkWidget() {
     };
   }, []);
 
-  if (TAWK_ID) return null;
+  if (TAWK_PROPERTY_ID) return null;
 
   return (
     <a
