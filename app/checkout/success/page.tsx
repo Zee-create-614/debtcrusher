@@ -9,13 +9,84 @@ function CheckoutSuccessContent() {
   const searchParams = useSearchParams();
   const [countdown, setCountdown] = useState(2);
 
+  const logCreditRepairDispute = async (paymentId: string, userEmail: string) => {
+    try {
+      // Get credit repair results from sessionStorage
+      const creditRepairResults = sessionStorage.getItem('creditRepairResults');
+      if (!creditRepairResults) {
+        console.warn('No credit repair results found for logging');
+        return;
+      }
+
+      const results = JSON.parse(creditRepairResults);
+      if (!results.items || !Array.isArray(results.items)) {
+        console.warn('Invalid credit repair results format');
+        return;
+      }
+
+      // Calculate total letters generated
+      let lettersGenerated = 0;
+      results.items.forEach((item: any) => {
+        // Count bureau dispute letters
+        if (item.dispute_letters) {
+          ['equifax', 'experian', 'transunion'].forEach(bureau => {
+            if (item.dispute_letters[bureau]) lettersGenerated++;
+          });
+        }
+        // Count additional letters
+        if (item.goodwill_letter) lettersGenerated++;
+        if (item.pay_for_delete_letter) lettersGenerated++;
+      });
+
+      // Prepare disputed items for logging
+      const disputedItems = results.items.map((item: any) => ({
+        account: item.account,
+        type: item.type,
+        balance: item.balance,
+        dispute_reason: item.dispute_reason,
+        dispute_type: item.dispute_type,
+        confidence: item.confidence,
+        estimated_score_impact: item.estimated_score_impact,
+      }));
+
+      // Log the dispute
+      const response = await fetch('/api/credit-repair/log', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify({
+          paymentId,
+          disputedItems,
+          disputeType: 'bureau_disputes', // Primary dispute type for unlocked letters
+          lettersGenerated,
+        }),
+      });
+
+      if (!response.ok) {
+        console.error('Failed to log credit repair dispute:', await response.text());
+      } else {
+        console.log('Credit repair dispute logged successfully');
+      }
+    } catch (error) {
+      console.error('Error logging credit repair dispute:', error);
+    }
+  };
+
   const product = searchParams.get('product');
-  const transactionId = searchParams.get('transactionId') || searchParams.get('checkoutId') || 'square-payment';
+  const sessionId = searchParams.get('sessionId');
+  const userEmail = searchParams.get('userEmail');
+  const transactionId = searchParams.get('transactionId') || searchParams.get('checkoutId') || sessionId || 'square-payment';
 
   useEffect(() => {
     // Store unlock state in sessionStorage
     if (product) {
       sessionStorage.setItem('debtcrusher_unlocked', product);
+    }
+
+    // Log credit repair dispute if this was a credit repair purchase
+    if (product === 'credit_repair_unlock' && sessionId && userEmail) {
+      logCreditRepairDispute(sessionId, userEmail);
     }
 
     // Countdown and redirect

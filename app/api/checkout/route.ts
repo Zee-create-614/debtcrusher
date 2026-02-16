@@ -1,6 +1,8 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { Client, Environment } from 'square';
 import { randomUUID } from 'crypto';
+import { getServerSession } from 'next-auth';
+import { authOptions } from '../auth/[...nextauth]/route';
 
 const client = new Client({
   accessToken: process.env.SQUARE_ACCESS_TOKEN!,
@@ -9,6 +11,15 @@ const client = new Client({
 
 export async function POST(request: NextRequest) {
   try {
+    // Check if user is authenticated
+    const session = await getServerSession(authOptions);
+    if (!session?.user?.email) {
+      return NextResponse.json(
+        { error: 'Authentication required. Please sign in before making a purchase.' },
+        { status: 401 }
+      );
+    }
+
     const body = await request.json();
     const { product, amount, description, successUrl, cancelUrl } = body;
 
@@ -23,6 +34,9 @@ export async function POST(request: NextRequest) {
     // Create Square Payment Link
     const checkoutApi = client.checkoutApi;
     
+    // Generate a unique session ID to track this checkout
+    const checkoutSessionId = randomUUID();
+
     const createPaymentLinkRequest = {
       idempotencyKey: randomUUID(),
       quickPay: {
@@ -34,7 +48,7 @@ export async function POST(request: NextRequest) {
         locationId: process.env.SQUARE_LOCATION_ID!,
       },
       checkoutOptions: {
-        redirectUrl: `${successUrl}?product=${product}`,
+        redirectUrl: `${successUrl}?product=${product}&sessionId=${checkoutSessionId}&userEmail=${encodeURIComponent(session.user.email)}`,
         // Note: Square doesn't have a direct cancel URL - users can close the checkout
       },
     };

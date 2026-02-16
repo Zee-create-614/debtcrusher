@@ -157,6 +157,13 @@ export default function CreditRepairResultsPage() {
   };
 
   const handleUnlockLetters = async () => {
+    // Check if user is authenticated
+    if (!session?.user) {
+      // Redirect to sign-in page
+      signIn();
+      return;
+    }
+
     try {
       // Track credit letters unlock intent
       try {
@@ -191,7 +198,14 @@ export default function CreditRepairResultsPage() {
       });
 
       if (!response.ok) {
-        throw new Error('Failed to create checkout session');
+        const errorData = await response.json();
+        if (response.status === 401) {
+          // Authentication required - redirect to sign in
+          alert('Please sign in to your account before making a purchase.');
+          signIn();
+          return;
+        }
+        throw new Error(errorData.error || 'Failed to create checkout session');
       }
 
       const { url } = await response.json();
