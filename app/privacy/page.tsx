@@ -21,7 +21,7 @@ export default function PrivacyPage() {
             <h3 className="text-xl font-medium mb-3">Personal Information</h3>
             <ul className="list-disc list-inside text-gray-300 space-y-2 ml-4 mb-4">
               <li>Email address (for account creation and communication)</li>
-              <li>Payment information (processed securely through Stripe)</li>
+              <li>Payment information (processed securely through Square)</li>
               <li>Name and contact information (if voluntarily provided)</li>
             </ul>
 
@@ -107,7 +107,7 @@ export default function PrivacyPage() {
             </div>
 
             <div className="bg-gray-800 p-4 rounded-lg mb-4">
-              <h3 className="font-medium mb-2">Stripe</h3>
+              <h3 className="font-medium mb-2">Square</h3>
               <p className="text-gray-300 text-sm">
                 For secure payment processing. We never store your payment information directly.
               </p>

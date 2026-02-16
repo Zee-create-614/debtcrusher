@@ -198,7 +198,7 @@ export default function ResultsPage() {
           product: 'script_unlock',
           amount: 799, // $7.99 in cents
           description: 'Debt Negotiation Script - DebtCrusher.ai',
-          successUrl: `${window.location.origin}/checkout/success?type=script`,
+          successUrl: `${window.location.origin}/checkout/success?product=script_unlock`,
           cancelUrl: `${window.location.origin}/checkout/cancel`,
         }),
       });

@@ -1,8 +1,10 @@
 import { NextRequest, NextResponse } from 'next/server';
-import Stripe from 'stripe';
+import { Client, Environment } from 'square';
+import { randomUUID } from 'crypto';
 
-const stripe = new Stripe(process.env.STRIPE_SECRET_KEY!, {
-  apiVersion: '2026-01-28.clover',
+const client = new Client({
+  accessToken: process.env.SQUARE_ACCESS_TOKEN!,
+  environment: process.env.SQUARE_ENVIRONMENT === 'production' ? Environment.Production : Environment.Sandbox,
 });
 
 export async function POST(request: NextRequest) {
@@ -18,32 +20,34 @@ export async function POST(request: NextRequest) {
       );
     }
 
-    // Create Stripe Checkout Session
-    const session = await stripe.checkout.sessions.create({
-      payment_method_types: ['card'],
-      line_items: [
-        {
-          price_data: {
-            currency: 'usd',
-            product_data: {
-              name: description,
-            },
-            unit_amount: amount,
-          },
-          quantity: 1,
+    // Create Square Payment Link
+    const checkoutApi = client.checkoutApi;
+    
+    const createPaymentLinkRequest = {
+      idempotencyKey: randomUUID(),
+      quickPay: {
+        name: description,
+        priceMoney: {
+          amount: BigInt(amount), // Square expects amount in cents as BigInt
+          currency: 'USD',
         },
-      ],
-      mode: 'payment',
-      success_url: `${successUrl}?session_id={CHECKOUT_SESSION_ID}&product=${product}`,
-      cancel_url: cancelUrl,
-      metadata: {
-        product,
+        locationId: process.env.SQUARE_LOCATION_ID!,
       },
-    });
+      checkoutOptions: {
+        redirectUrl: `${successUrl}?product=${product}`,
+        // Note: Square doesn't have a direct cancel URL - users can close the checkout
+      },
+    };
 
-    return NextResponse.json({ url: session.url });
+    const response = await checkoutApi.createPaymentLink(createPaymentLinkRequest);
+    
+    if (response.result.paymentLink?.url) {
+      return NextResponse.json({ url: response.result.paymentLink.url });
+    } else {
+      throw new Error('No payment link URL returned from Square');
+    }
   } catch (error) {
-    console.error('Error creating checkout session:', error);
+    console.error('Error creating Square checkout:', error);
     return NextResponse.json(
       { error: 'Failed to create checkout session' },
       { status: 500 }

@@ -10,7 +10,7 @@ function CheckoutSuccessContent() {
   const [countdown, setCountdown] = useState(2);
 
   const product = searchParams.get('product');
-  const sessionId = searchParams.get('session_id');
+  const transactionId = searchParams.get('transactionId') || searchParams.get('checkoutId') || 'square-payment';
 
   useEffect(() => {
     // Store unlock state in sessionStorage
@@ -84,8 +84,8 @@ function CheckoutSuccessContent() {
         </div>
 
         <div className="text-sm text-gray-500 mb-4">
-          {sessionId && (
-            <p>Transaction ID: {sessionId.substring(0, 20)}...</p>
+          {transactionId && transactionId !== 'square-payment' && (
+            <p>Transaction ID: {transactionId.substring(0, 20)}...</p>
           )}
         </div>
 

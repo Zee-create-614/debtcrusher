@@ -117,7 +117,7 @@ export default function PricingPage() {
               { q: "How does the money-back guarantee work?", a: "If our analysis doesn't find any errors, overcharges, or actionable savings opportunities in your bill, we refund your $25 in full. No questions asked, no fine print." },
               { q: "Can I cancel the unlimited plan anytime?", a: "Yes. Cancel anytime from your account dashboard. You'll keep access through the end of your billing period. No cancellation fees." },
               { q: "What counts as an 'analysis'?", a: "Each bill, collection notice, or debt description you submit counts as one analysis. The unlimited plan lets you submit as many as you need." },
-              { q: "Do you store my payment information?", a: "We use Stripe for payment processing. We never see or store your full card number. All transactions are encrypted end-to-end." },
+              { q: "Do you store my payment information?", a: "We use Square for payment processing. We never see or store your full card number. All transactions are encrypted and secure." },
             ].map((faq, i) => (
               <details key={i} className="glass rounded-xl group">
                 <summary className="p-5 cursor-pointer font-semibold text-white hover:text-crusher-blue transition-colors list-none flex items-center justify-between">
