@@ -1,29 +1,17 @@
 import { NextRequest, NextResponse } from 'next/server';
-import { Client, Environment } from 'square';
+import { SquareClient, SquareEnvironment } from 'square';
 import { randomUUID } from 'crypto';
-import { getServerSession } from 'next-auth';
-import { authOptions } from '../auth/[...nextauth]/route';
 
-const client = new Client({
-  accessToken: process.env.SQUARE_ACCESS_TOKEN!,
-  environment: process.env.SQUARE_ENVIRONMENT === 'production' ? Environment.Production : Environment.Sandbox,
+const client = new SquareClient({
+  token: process.env.SQUARE_ACCESS_TOKEN!,
+  environment: process.env.SQUARE_ENVIRONMENT === 'production' ? SquareEnvironment.Production : SquareEnvironment.Sandbox,
 });
 
 export async function POST(request: NextRequest) {
   try {
-    // Check if user is authenticated
-    const session = await getServerSession(authOptions);
-    if (!session?.user?.email) {
-      return NextResponse.json(
-        { error: 'Authentication required. Please sign in before making a purchase.' },
-        { status: 401 }
-      );
-    }
-
     const body = await request.json();
     const { product, amount, description, successUrl, cancelUrl } = body;
 
-    // Validate required fields
     if (!product || !amount || !description || !successUrl || !cancelUrl) {
       return NextResponse.json(
         { error: 'Missing required fields' },
@@ -31,32 +19,25 @@ export async function POST(request: NextRequest) {
       );
     }
 
-    // Create Square Payment Link
-    const checkoutApi = client.checkoutApi;
-    
-    // Generate a unique session ID to track this checkout
     const checkoutSessionId = randomUUID();
 
-    const createPaymentLinkRequest = {
+    const response = await client.checkout.paymentLinks.create({
       idempotencyKey: randomUUID(),
       quickPay: {
         name: description,
         priceMoney: {
-          amount: BigInt(amount), // Square expects amount in cents as BigInt
+          amount: BigInt(amount),
           currency: 'USD',
         },
         locationId: process.env.SQUARE_LOCATION_ID!,
       },
       checkoutOptions: {
-        redirectUrl: `${successUrl}?product=${product}&sessionId=${checkoutSessionId}&userEmail=${encodeURIComponent(session.user.email)}`,
-        // Note: Square doesn't have a direct cancel URL - users can close the checkout
+        redirectUrl: `${successUrl}?product=${product}&sessionId=${checkoutSessionId}`,
       },
-    };
+    });
 
-    const response = await checkoutApi.createPaymentLink(createPaymentLinkRequest);
-    
-    if (response.result.paymentLink?.url) {
-      return NextResponse.json({ url: response.result.paymentLink.url });
+    if (response.paymentLink?.url) {
+      return NextResponse.json({ url: response.paymentLink.url });
     } else {
       throw new Error('No payment link URL returned from Square');
     }

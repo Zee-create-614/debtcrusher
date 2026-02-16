@@ -1,68 +1,9 @@
-import Database from 'better-sqlite3';
 import path from 'path';
 import fs from 'fs';
 
-// Ensure data directory exists
-const dataDir = path.join(process.cwd(), 'data');
-if (!fs.existsSync(dataDir)) {
-  fs.mkdirSync(dataDir, { recursive: true });
-}
-
-const dbPath = path.join(dataDir, 'debtcrusher.db');
-const db = new Database(dbPath);
-
-// Enable WAL mode for better concurrent access
-db.pragma('journal_mode = WAL');
-
-// Create tables if they don't exist
-db.exec(`
-  CREATE TABLE IF NOT EXISTS credit_repair_logs (
-    id INTEGER PRIMARY KEY AUTOINCREMENT,
-    user_email TEXT NOT NULL,
-    payment_id TEXT,
-    disputed_items TEXT NOT NULL, -- JSON string of disputed items
-    dispute_type TEXT NOT NULL, -- 'bureau_disputes', 'goodwill', 'pay_for_delete'
-    letters_generated INTEGER NOT NULL DEFAULT 0,
-    created_at DATETIME DEFAULT CURRENT_TIMESTAMP,
-    refund_eligible_until DATETIME NOT NULL -- 60 days from created_at
-  );
-  
-  CREATE INDEX IF NOT EXISTS idx_credit_repair_logs_user_email 
-  ON credit_repair_logs (user_email);
-  
-  CREATE INDEX IF NOT EXISTS idx_credit_repair_logs_payment_id 
-  ON credit_repair_logs (payment_id);
-  
-  CREATE INDEX IF NOT EXISTS idx_credit_repair_logs_created_at 
-  ON credit_repair_logs (created_at);
-`);
-
-// Prepared statements for better performance
-const statements = {
-  insertCreditRepairLog: db.prepare(`
-    INSERT INTO credit_repair_logs (
-      user_email, payment_id, disputed_items, dispute_type, 
-      letters_generated, refund_eligible_until
-    ) VALUES (?, ?, ?, ?, ?, datetime('now', '+60 days'))
-  `),
-  
-  getCreditRepairLogsByUser: db.prepare(`
-    SELECT * FROM credit_repair_logs 
-    WHERE user_email = ?
-    ORDER BY created_at DESC
-  `),
-  
-  getCreditRepairLogByPaymentId: db.prepare(`
-    SELECT * FROM credit_repair_logs 
-    WHERE payment_id = ?
-  `),
-  
-  getEligibleRefunds: db.prepare(`
-    SELECT * FROM credit_repair_logs 
-    WHERE refund_eligible_until > datetime('now')
-    ORDER BY created_at DESC
-  `),
-};
+// Use /tmp on Vercel (serverless), or local data dir in dev
+const dataDir = process.env.VERCEL ? '/tmp' : path.join(process.cwd(), 'data');
+const dbPath = path.join(dataDir, 'credit_repair_logs.json');
 
 export interface CreditRepairLog {
   id: number;
@@ -85,10 +26,23 @@ export interface DisputedItem {
   estimated_score_impact: number;
 }
 
+function readLogs(): CreditRepairLog[] {
+  try {
+    if (fs.existsSync(dbPath)) {
+      return JSON.parse(fs.readFileSync(dbPath, 'utf-8'));
+    }
+  } catch {}
+  return [];
+}
+
+function writeLogs(logs: CreditRepairLog[]): void {
+  if (!fs.existsSync(dataDir)) {
+    fs.mkdirSync(dataDir, { recursive: true });
+  }
+  fs.writeFileSync(dbPath, JSON.stringify(logs, null, 2));
+}
+
 export const creditRepairDb = {
-  /**
-   * Log a credit repair dispute session
-   */
   logCreditRepairDispute: (
     userEmail: string,
     paymentId: string | null,
@@ -96,48 +50,36 @@ export const creditRepairDb = {
     disputeType: 'bureau_disputes' | 'goodwill' | 'pay_for_delete',
     lettersGenerated: number
   ): void => {
-    const disputedItemsJson = JSON.stringify(disputedItems);
-    statements.insertCreditRepairLog.run(
-      userEmail,
-      paymentId,
-      disputedItemsJson,
-      disputeType,
-      lettersGenerated
-    );
+    const logs = readLogs();
+    const now = new Date();
+    const refundDate = new Date(now.getTime() + 60 * 24 * 60 * 60 * 1000);
+    logs.push({
+      id: logs.length + 1,
+      user_email: userEmail,
+      payment_id: paymentId,
+      disputed_items: JSON.stringify(disputedItems),
+      dispute_type: disputeType,
+      letters_generated: lettersGenerated,
+      created_at: now.toISOString(),
+      refund_eligible_until: refundDate.toISOString(),
+    });
+    writeLogs(logs);
   },
 
-  /**
-   * Get all credit repair logs for a user
-   */
   getCreditRepairLogsByUser: (userEmail: string): CreditRepairLog[] => {
-    return statements.getCreditRepairLogsByUser.all(userEmail) as CreditRepairLog[];
+    return readLogs().filter(l => l.user_email === userEmail);
   },
 
-  /**
-   * Get credit repair log by payment ID
-   */
   getCreditRepairLogByPaymentId: (paymentId: string): CreditRepairLog | undefined => {
-    return statements.getCreditRepairLogByPaymentId.get(paymentId) as CreditRepairLog | undefined;
+    return readLogs().find(l => l.payment_id === paymentId);
   },
 
-  /**
-   * Get all logs eligible for refunds (within 60 days)
-   */
   getEligibleRefunds: (): CreditRepairLog[] => {
-    return statements.getEligibleRefunds.all() as CreditRepairLog[];
+    const now = new Date().toISOString();
+    return readLogs().filter(l => l.refund_eligible_until > now);
   },
 
-  /**
-   * Parse disputed items JSON
-   */
   parseDisputedItems: (log: CreditRepairLog): DisputedItem[] => {
-    try {
-      return JSON.parse(log.disputed_items);
-    } catch {
-      return [];
-    }
+    try { return JSON.parse(log.disputed_items); } catch { return []; }
   },
 };
-
-export { db };
-export default db;
