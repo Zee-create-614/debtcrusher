@@ -3,6 +3,7 @@
 import { useState, useEffect } from "react";
 import { useSession } from "next-auth/react";
 import FileUpload from "../components/FileUpload";
+import StateSelector from "../components/StateSelector";
 import { useRouter } from "next/navigation";
 
 export default function AnalyzePage() {
@@ -19,6 +20,13 @@ export default function AnalyzePage() {
     }
   }, [session, status, router]);
 
+  // User info fields
+  const [fullName, setFullName] = useState("");
+  const [streetAddress, setStreetAddress] = useState("");
+  const [city, setCity] = useState("");
+  const [state, setState] = useState("OH");
+  const [zipCode, setZipCode] = useState("");
+
   // Upload functionality
   const [, setFile] = useState<File | null>(null);
   const [imageBase64, setImageBase64] = useState<string | null>(null);
@@ -27,6 +35,12 @@ export default function AnalyzePage() {
   const handleAnalyze = async () => {
     if (!imageBase64) {
       alert("Please upload an image of your bill first.");
+      return;
+    }
+
+    // Validate required user info fields
+    if (!fullName || !streetAddress || !city || !state || !zipCode) {
+      alert("Please fill in all required fields: Full Name, Street Address, City, State, and ZIP Code.");
       return;
     }
 
@@ -39,10 +53,17 @@ export default function AnalyzePage() {
         description: "Uploaded bill image",
         amount: 0,
         creditor: "Unknown",
-        state: "OH",
+        state: state,
         debt_age: "<1 year",
         image_base64: imageBase64,
         image_mime_type: imageMimeType,
+        user_info: {
+          full_name: fullName,
+          street_address: streetAddress,
+          city: city,
+          state: state,
+          zip_code: zipCode,
+        },
       };
 
       setTimeout(() => setLoadingStatus("🔍 Analyzing your bill..."), 3000);
@@ -122,6 +143,71 @@ export default function AnalyzePage() {
 
         <div className="glass-strong rounded-2xl p-8 animate-fade-in-up-delay">
           <div className="space-y-6">
+            {/* User Information Section */}
+            <div>
+              <h2 className="text-xl font-bold text-white mb-4">Your Information</h2>
+              <p className="text-slate-400 text-sm mb-4">
+                Required for generating dispute letters and negotiation scripts
+              </p>
+              
+              <div className="grid grid-cols-1 md:grid-cols-2 gap-4 mb-6">
+                <div>
+                  <label className="block text-white font-medium mb-2">Full Name *</label>
+                  <input
+                    type="text"
+                    value={fullName}
+                    onChange={(e) => setFullName(e.target.value)}
+                    placeholder="John Smith"
+                    className="w-full bg-slate-800 border border-slate-700 rounded-xl px-4 py-3 text-white placeholder-slate-400 focus:outline-none focus:border-crusher-blue transition-colors"
+                    required
+                  />
+                </div>
+                
+                <div>
+                  <label className="block text-white font-medium mb-2">Street Address *</label>
+                  <input
+                    type="text"
+                    value={streetAddress}
+                    onChange={(e) => setStreetAddress(e.target.value)}
+                    placeholder="123 Main Street"
+                    className="w-full bg-slate-800 border border-slate-700 rounded-xl px-4 py-3 text-white placeholder-slate-400 focus:outline-none focus:border-crusher-blue transition-colors"
+                    required
+                  />
+                </div>
+                
+                <div>
+                  <label className="block text-white font-medium mb-2">City *</label>
+                  <input
+                    type="text"
+                    value={city}
+                    onChange={(e) => setCity(e.target.value)}
+                    placeholder="Columbus"
+                    className="w-full bg-slate-800 border border-slate-700 rounded-xl px-4 py-3 text-white placeholder-slate-400 focus:outline-none focus:border-crusher-blue transition-colors"
+                    required
+                  />
+                </div>
+                
+                <div>
+                  <label className="block text-white font-medium mb-2">State *</label>
+                  <StateSelector value={state} onChange={setState} />
+                </div>
+                
+                <div className="md:col-span-2">
+                  <label className="block text-white font-medium mb-2">ZIP Code *</label>
+                  <input
+                    type="text"
+                    value={zipCode}
+                    onChange={(e) => setZipCode(e.target.value)}
+                    placeholder="43215"
+                    maxLength={10}
+                    className="w-full bg-slate-800 border border-slate-700 rounded-xl px-4 py-3 text-white placeholder-slate-400 focus:outline-none focus:border-crusher-blue transition-colors"
+                    required
+                  />
+                </div>
+              </div>
+            </div>
+
+            {/* Upload Section */}
             <div>
               <h2 className="text-xl font-bold text-white mb-4">Upload Your Bill</h2>
               <p className="text-slate-400 text-sm mb-4">Upload a screenshot or photo of your bill — our AI reads everything automatically.</p>
@@ -137,7 +223,7 @@ export default function AnalyzePage() {
             
             <button
               onClick={handleAnalyze}
-              disabled={loading || !imageBase64}
+              disabled={loading || !imageBase64 || !fullName || !streetAddress || !city || !state || !zipCode}
               className="w-full bg-crusher-blue hover:bg-crusher-blue-dark disabled:opacity-50 text-white py-4 rounded-xl font-bold text-lg transition-all hover:scale-105"
             >
               {loading ? `⏳ ${loadingStatus || "Analyzing..."}` : "⚡ Analyze My Bill"}

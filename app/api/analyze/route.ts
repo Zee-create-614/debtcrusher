@@ -81,6 +81,13 @@ Given the user's bill/debt information, provide a detailed analysis as a JSON ob
     "credit_dispute_experian": "Credit bureau dispute letter addressed to Experian, P.O. Box 4500, Allen, TX 75013",
     "credit_dispute_transunion": "Credit bureau dispute letter addressed to TransUnion LLC, P.O. Box 2000, Chester, PA 19016"
   },
+  "email_templates": {
+    "debt_validation_email": "Professional email requesting debt validation under FDCPA - include subject line",
+    "cease_desist_email": "Cease and desist email to stop collection calls/letters - include subject line", 
+    "settlement_offer_email": "Settlement negotiation email with specific offer amount - include subject line",
+    "hardship_letter_email": "Financial hardship explanation email - include subject line",
+    "dispute_charges_email": "Email disputing specific charges or billing errors - include subject line"
+  },
   "negotiation_script": [
     "Step 1: ...",
     "Step 2: ...",
@@ -94,6 +101,10 @@ Rules for your analysis:
 - Letters should reference specific statutes: FDCPA (15 U.S.C. § 1692 et seq.), FCRA (15 U.S.C. § 1681 et seq.)
 - Include today's date in letters
 - Settlement offers: older debt = lower offer (7+ years: 15-20%, 5-7 years: 20-25%, 3-5 years: 25-35%, 1-3 years: 35-45%, <1 year: 45-55%)
+- Email templates must be professional but firm, ready to copy-paste-send
+- Each email template must start with "Subject: [subject line]" followed by the email body
+- Email templates should be conversational yet professional, avoiding overly legal language
+- Include the consumer's name in email signatures
 - For medical bills, cross-reference CPT codes against these known overcharges and fair prices:
 COMMON CPT OVERCHARGES:
 {OVERCHARGES_REF}
@@ -133,10 +144,17 @@ export async function POST(request: Request) {
     return NextResponse.json({ error: "Invalid request body." }, { status: 400 });
   }
 
-  const { type, description, amount, creditor, state, debt_age, bill_text, image_base64, image_mime_type } = body as {
+  const { type, description, amount, creditor, state, debt_age, bill_text, image_base64, image_mime_type, user_info } = body as {
     type?: string; description?: string; amount?: number; creditor?: string;
     state?: string; debt_age?: string; bill_text?: string;
     image_base64?: string; image_mime_type?: string;
+    user_info?: {
+      full_name: string;
+      street_address: string;
+      city: string;
+      state: string;
+      zip_code: string;
+    };
   };
 
   // --- PDF or Vision: extract bill text ---
@@ -232,6 +250,13 @@ DEBT INFORMATION:
 - Description: ${description || "None provided"}
 ${extractedBillText ? `\nBILL TEXT / DETAILS:\n${extractedBillText}` : ""}
 
+${user_info ? `USER INFORMATION (use this in all generated letters):
+- Full Name: ${user_info.full_name}
+- Address: ${user_info.street_address}, ${user_info.city}, ${user_info.state} ${user_info.zip_code}
+` : ""}
+
+IMPORTANT: All letters (dispute, validation, settlement, credit disputes) must be pre-filled with the user's name and address in proper business letter format.
+
 Today's date: ${new Date().toLocaleDateString("en-US", { year: "numeric", month: "long", day: "numeric" })}`;
 
   const systemPrompt = SYSTEM_PROMPT.replace("{OVERCHARGES_REF}", buildOverchargesReference());
@@ -310,6 +335,13 @@ Today's date: ${new Date().toLocaleDateString("en-US", { year: "numeric", month:
           experian: analysis.letters?.credit_dispute_experian || "",
           transunion: analysis.letters?.credit_dispute_transunion || "",
         },
+      },
+      emailTemplates: {
+        debtValidation: analysis.email_templates?.debt_validation_email || "",
+        ceaseDesist: analysis.email_templates?.cease_desist_email || "",
+        settlementOffer: analysis.email_templates?.settlement_offer_email || "",
+        hardshipLetter: analysis.email_templates?.hardship_letter_email || "",
+        disputeCharges: analysis.email_templates?.dispute_charges_email || "",
       },
       negotiationScript: analysis.negotiation_script || [],
       keyFindings: analysis.key_findings || [],

@@ -42,7 +42,7 @@ export default function AccountPage() {
   const [creditScores, setCreditScores] = useState<CreditScore[]>([])
   const [bureauResponses, setBureauResponses] = useState<BureauResponse[]>([])
   const [loading, setLoading] = useState(true)
-  const [activeTab, setActiveTab] = useState<'overview' | 'letters' | 'history' | 'payments' | 'responses' | 'scores'>('overview')
+  const [activeTab, setActiveTab] = useState<'overview' | 'bills' | 'letters' | 'history' | 'payments' | 'responses' | 'scores'>('overview')
   
   // Credit Score Tracker state
   const [newScore, setNewScore] = useState('')
@@ -239,7 +239,104 @@ export default function AccountPage() {
     printWindow.document.write(`
       <html>
         <head>
-          <title>Dispute Letters - ${formatDate(analysis.date)}</title>
+          <title>Credit Repair Letters - ${formatDate(analysis.date)}</title>
+          <style>
+            body { 
+              font-family: 'Times New Roman', serif; 
+              margin: 40px; 
+              line-height: 1.6; 
+              color: #000;
+            }
+            .letter { 
+              page-break-after: always; 
+              margin-bottom: 40px; 
+            }
+            .letter:last-child {
+              page-break-after: auto;
+            }
+            .letter-title { 
+              text-align: center; 
+              font-size: 18px; 
+              font-weight: bold; 
+              margin-bottom: 30px; 
+              border-bottom: 1px solid #000;
+              padding-bottom: 10px;
+            }
+            .letter-content { 
+              white-space: pre-wrap; 
+              font-size: 12pt; 
+            }
+            @media print {
+              body { margin: 0.5in; }
+            }
+          </style>
+        </head>
+        <body>
+          ${letters.map(letter => `
+            <div class="letter">
+              <div class="letter-title">${letter.title}</div>
+              <div class="letter-content">${letter.content}</div>
+            </div>
+          `).join('')}
+        </body>
+      </html>
+    `)
+    printWindow.document.close()
+    printWindow.print()
+  }
+
+  const downloadBillAnalysisPDF = (analysis: Analysis) => {
+    if (!analysis.results) return
+    
+    const letters: any[] = []
+    
+    // Add bill analysis letters
+    if (analysis.results.letters?.dispute_letter) {
+      letters.push({
+        title: 'Bill Dispute Letter',
+        content: analysis.results.letters.dispute_letter
+      })
+    }
+    if (analysis.results.letters?.debt_validation) {
+      letters.push({
+        title: 'Debt Validation Letter',
+        content: analysis.results.letters.debt_validation
+      })
+    }
+    if (analysis.results.letters?.settlement_offer) {
+      letters.push({
+        title: 'Settlement Offer Letter',
+        content: analysis.results.letters.settlement_offer
+      })
+    }
+    if (analysis.results.letters?.credit_dispute_equifax) {
+      letters.push({
+        title: 'Credit Dispute - Equifax',
+        content: analysis.results.letters.credit_dispute_equifax
+      })
+    }
+    if (analysis.results.letters?.credit_dispute_experian) {
+      letters.push({
+        title: 'Credit Dispute - Experian',
+        content: analysis.results.letters.credit_dispute_experian
+      })
+    }
+    if (analysis.results.letters?.credit_dispute_transunion) {
+      letters.push({
+        title: 'Credit Dispute - TransUnion',
+        content: analysis.results.letters.credit_dispute_transunion
+      })
+    }
+
+    if (letters.length === 0) return
+
+    const printWindow = window.open('', '_blank')
+    if (!printWindow) return
+    
+    printWindow.document.write(`
+      <html>
+        <head>
+          <title>Bill Analysis Letters - ${formatDate(analysis.date)}</title>
           <style>
             body { 
               font-family: 'Times New Roman', serif; 
@@ -347,8 +444,9 @@ export default function AccountPage() {
           <div className="flex flex-wrap gap-2 bg-gray-800 p-1 rounded-lg">
             {[
               { key: 'overview', label: 'Overview', icon: CheckCircle },
-              { key: 'letters', label: 'My Dispute Letters', icon: FileText },
-              { key: 'history', label: 'Dispute History', icon: Calendar },
+              { key: 'bills', label: 'Bill Analysis', icon: FileText },
+              { key: 'letters', label: 'Credit Dispute Letters', icon: FileText },
+              { key: 'history', label: 'Credit Repair History', icon: Calendar },
               { key: 'payments', label: 'Payment History', icon: DollarSign },
               { key: 'responses', label: 'Bureau Responses', icon: Upload },
               { key: 'scores', label: 'Credit Score Tracker', icon: TrendingUp }
@@ -434,6 +532,69 @@ export default function AccountPage() {
                 </a>
               </div>
             </div>
+          </div>
+        )}
+
+        {activeTab === 'bills' && (
+          <div className="bg-gray-800 rounded-lg p-6">
+            <h2 className="text-xl font-semibold mb-4">My Bill Analyses</h2>
+            {billAnalyses.length === 0 ? (
+              <div className="text-center text-gray-400 py-12">
+                <FileText size={48} className="mx-auto mb-4 opacity-50" />
+                <p>No bill analyses yet.</p>
+                <a
+                  href="/analyze"
+                  className="inline-block bg-green-600 hover:bg-green-500 px-4 py-2 rounded-lg transition-colors mt-4"
+                >
+                  Analyze Your First Bill
+                </a>
+              </div>
+            ) : (
+              <div className="space-y-4">
+                {billAnalyses.map((analysis) => (
+                  <div key={analysis.id} className="bg-gray-700 rounded-lg p-4">
+                    <div className="flex justify-between items-start mb-3">
+                      <div>
+                        <h3 className="font-semibold flex items-center gap-2">
+                          <FileText size={18} />
+                          Bill Analysis - {formatDate(analysis.date)}
+                        </h3>
+                        <p className="text-sm text-gray-300 mt-1">
+                          {analysis.savingsFound ? `$${analysis.savingsFound.toLocaleString()} savings found` : 'Analysis completed'}
+                        </p>
+                      </div>
+                      <button
+                        onClick={() => downloadBillAnalysisPDF(analysis)}
+                        className="bg-green-600 hover:bg-green-500 px-4 py-2 rounded-lg text-sm transition-colors flex items-center gap-2"
+                      >
+                        <Download size={16} />
+                        Download PDF
+                      </button>
+                    </div>
+                    <p className="text-gray-300 text-sm mb-3">{analysis.summary}</p>
+                    
+                    <div className="grid grid-cols-2 md:grid-cols-3 gap-4">
+                      {analysis.savingsFound && (
+                        <div>
+                          <span className="text-sm text-gray-400">Savings Found</span>
+                          <p className="font-semibold text-green-400">
+                            ${analysis.savingsFound.toLocaleString()}
+                          </p>
+                        </div>
+                      )}
+                      <div>
+                        <span className="text-sm text-gray-400">Status</span>
+                        <p className="font-semibold">Analyzed</p>
+                      </div>
+                      <div>
+                        <span className="text-sm text-gray-400">Type</span>
+                        <p className="font-semibold">Medical Bill</p>
+                      </div>
+                    </div>
+                  </div>
+                ))}
+              </div>
+            )}
           </div>
         )}
 

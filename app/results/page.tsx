@@ -3,6 +3,7 @@
 import { useEffect, useState, Suspense } from "react";
 import { useSession, signIn } from 'next-auth/react';
 import LetterPreview from "../components/LetterPreview";
+import EmailTemplatePreview from "../components/EmailTemplatePreview";
 
 interface LineItem {
   code: string;
@@ -46,6 +47,13 @@ interface AnalysisResult {
       experian: string;
       transunion: string;
     };
+  };
+  emailTemplates: {
+    debtValidation: string;
+    ceaseDesist: string;
+    settlementOffer: string;
+    hardshipLetter: string;
+    disputeCharges: string;
   };
   negotiationScript: string[];
   debtType: string;
@@ -92,33 +100,62 @@ export default function ResultsPage() {
   const { data: session, status } = useSession();
   const [results, setResults] = useState<AnalysisResult | null>(null);
   const [downloadedLetters, setDownloadedLetters] = useState<Set<string>>(new Set());
+  const [copiedEmails, setCopiedEmails] = useState<Set<string>>(new Set());
   const [scriptUnlocked, setScriptUnlocked] = useState(false);
   const [bulkDownloading, setBulkDownloading] = useState(false);
   const [showAccountPrompt, setShowAccountPrompt] = useState(false);
   const [savedToAccount, setSavedToAccount] = useState(false);
 
   useEffect(() => {
-    const stored = sessionStorage.getItem("analysisResults");
-    if (stored) {
-      try {
-        const parsed = JSON.parse(stored);
-        if (parsed.error || !parsed.summary) {
-          setResults(null);
-          return;
-        }
-        setResults(parsed);
+    const loadResults = async () => {
+      const stored = sessionStorage.getItem("analysisResults");
+      if (stored) {
+        try {
+          const parsed = JSON.parse(stored);
+          if (parsed.error || !parsed.summary) {
+            setResults(null);
+            return;
+          }
+          setResults(parsed);
 
-        // Auto-save if user is logged in
-        if (session?.user?.email) {
-          saveToAccount(parsed);
-        } else {
-          // Show account prompt after 3 seconds if not logged in
-          setTimeout(() => setShowAccountPrompt(true), 3000);
+          // Auto-save if user is logged in
+          if (session?.user?.email) {
+            saveToAccount(parsed);
+          } else {
+            // Show account prompt after 3 seconds if not logged in
+            setTimeout(() => setShowAccountPrompt(true), 3000);
+          }
+          return;
+        } catch {
+          // Fall through to try loading from server
         }
-      } catch {
-        setResults(null);
       }
-    }
+
+      // If no sessionStorage results and user is logged in, try loading latest bill analysis from server
+      if (session?.user?.email && !stored) {
+        try {
+          const response = await fetch('/api/user/analyses');
+          if (response.ok) {
+            const data = await response.json();
+            const latestBillAnalysis = data.analyses
+              .filter((analysis: any) => analysis.type === 'bill' && analysis.results)
+              .sort((a: any, b: any) => new Date(b.date).getTime() - new Date(a.date).getTime())[0];
+            
+            if (latestBillAnalysis && latestBillAnalysis.results) {
+              setResults(latestBillAnalysis.results);
+              setSavedToAccount(true);
+              return;
+            }
+          }
+        } catch (error) {
+          console.error('Failed to load results from server:', error);
+        }
+      }
+      
+      setResults(null);
+    };
+
+    loadResults();
     
     // Check for unlock parameters from successful payment
     const urlParams = new URLSearchParams(window.location.search);
@@ -242,6 +279,18 @@ export default function ResultsPage() {
 
   const handleLetterDownload = (letterTitle: string) => {
     setDownloadedLetters((prev) => new Set([...prev, letterTitle]));
+  };
+
+  const handleEmailCopy = (emailTitle: string) => {
+    setCopiedEmails((prev) => new Set([...prev, emailTitle]));
+    // Reset the "copied" state after 3 seconds
+    setTimeout(() => {
+      setCopiedEmails((prev) => {
+        const newSet = new Set(prev);
+        newSet.delete(emailTitle);
+        return newSet;
+      });
+    }, 3000);
   };
 
   const undownloadedCount = allLetters.filter((l) => !downloadedLetters.has(l.title)).length;
@@ -466,6 +515,52 @@ export default function ResultsPage() {
             >
               📄 Download All Letters as PDF
             </button>
+          </div>
+        </div>
+
+        {/* Email Templates */}
+        <div className="mb-8">
+          <h2 className="text-2xl font-black text-white mb-6">📧 Pre-Written Email Templates</h2>
+          <p className="text-slate-400 mb-6 text-sm">
+            Professional email templates you can copy and send directly to collectors. 
+            Each template is pre-filled with your information and ready to use.
+          </p>
+          <div className="space-y-3">
+            <EmailTemplatePreview
+              title="Debt Validation Request"
+              content={results.emailTemplates?.debtValidation || ''}
+              icon="📋"
+              onCopyClick={() => handleEmailCopy('Debt Validation Request')}
+              isCopied={copiedEmails.has('Debt Validation Request')}
+            />
+            <EmailTemplatePreview
+              title="Cease & Desist"
+              content={results.emailTemplates?.ceaseDesist || ''}
+              icon="🛑"
+              onCopyClick={() => handleEmailCopy('Cease & Desist')}
+              isCopied={copiedEmails.has('Cease & Desist')}
+            />
+            <EmailTemplatePreview
+              title="Settlement Offer"
+              content={results.emailTemplates?.settlementOffer || ''}
+              icon="🤝"
+              onCopyClick={() => handleEmailCopy('Settlement Offer')}
+              isCopied={copiedEmails.has('Settlement Offer')}
+            />
+            <EmailTemplatePreview
+              title="Hardship Letter"
+              content={results.emailTemplates?.hardshipLetter || ''}
+              icon="💔"
+              onCopyClick={() => handleEmailCopy('Hardship Letter')}
+              isCopied={copiedEmails.has('Hardship Letter')}
+            />
+            <EmailTemplatePreview
+              title="Dispute of Charges"
+              content={results.emailTemplates?.disputeCharges || ''}
+              icon="⚠️"
+              onCopyClick={() => handleEmailCopy('Dispute of Charges')}
+              isCopied={copiedEmails.has('Dispute of Charges')}
+            />
           </div>
         </div>
 
