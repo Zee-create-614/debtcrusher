@@ -2,7 +2,7 @@
 
 import { useEffect } from "react";
 
-const TAWK_ID = process.env.NEXT_PUBLIC_TAWK_PROPERTY_ID || "";
+const TAWK_ID = "6992090c21c0731c38d19e02";
 
 export default function TawkWidget() {
   useEffect(() => {
