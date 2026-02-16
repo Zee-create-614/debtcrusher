@@ -24,24 +24,25 @@ export async function GET(request: NextRequest) {
       environment: env === 'production' ? SquareEnvironment.Production : SquareEnvironment.Sandbox,
     })
 
-    // Search for payments at our location
-    const response = await client.payments.list({
+    const allPayments: any[] = []
+    
+    for await (const payment of await client.payments.list({
       locationId,
       sortOrder: 'DESC',
-      limit: 50,
-    })
+    })) {
+      allPayments.push({
+        id: (payment as any).id,
+        amount: (payment as any).amountMoney ? Number((payment as any).amountMoney.amount) / 100 : 0,
+        currency: (payment as any).amountMoney?.currency || 'USD',
+        status: (payment as any).status,
+        createdAt: (payment as any).createdAt,
+        receiptUrl: (payment as any).receiptUrl,
+        note: (payment as any).note || 'DebtCrusher Analysis',
+      })
+      if (allPayments.length >= 50) break
+    }
 
-    const payments = (response.payments || []).map((p: any) => ({
-      id: p.id,
-      amount: p.amountMoney ? Number(p.amountMoney.amount) / 100 : 0,
-      currency: p.amountMoney?.currency || 'USD',
-      status: p.status,
-      createdAt: p.createdAt,
-      receiptUrl: p.receiptUrl,
-      note: p.note || 'DebtCrusher Analysis',
-    }))
-
-    return NextResponse.json({ payments })
+    return NextResponse.json({ payments: allPayments })
   } catch (error) {
     console.error('Error fetching payments:', error)
     return NextResponse.json({ payments: [] })
