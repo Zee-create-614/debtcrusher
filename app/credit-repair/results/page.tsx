@@ -340,7 +340,7 @@ export default function CreditRepairResultsPage() {
         },
         body: JSON.stringify({
           product: 'credit_repair_unlock',
-          amount: 10, // $0.10 in cents (testing)
+          amount: 2500, // $25.00 in cents
           description: `Unlock All ${allLetters.length} Dispute Letters - DebtCrusher.ai`,
           successUrl: `${window.location.origin}/checkout/success`,
           cancelUrl: `${window.location.origin}/checkout/cancel`,
@@ -628,7 +628,7 @@ export default function CreditRepairResultsPage() {
                 onClick={handleUnlockLetters}
                 className="bg-crusher-blue hover:bg-crusher-blue-dark text-white px-8 py-4 rounded-xl font-bold text-lg transition-all hover:scale-105 shadow-lg shadow-crusher-blue/25"
               >
-                🔓 Unlock All Dispute Letters — $0.10
+                🔓 Unlock All Dispute Letters — $25.00
               </button>
               <p className="text-slate-500 text-xs mt-3">Includes dispute letters, goodwill letters, and pay-for-delete letters as downloadable PDFs</p>
             </div>

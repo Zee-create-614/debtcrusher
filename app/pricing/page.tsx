@@ -36,9 +36,9 @@ export default function PricingPage() {
 
         <div className="grid grid-cols-1 md:grid-cols-2 gap-8 max-w-4xl mx-auto mb-24">
           <PricingCard
-            name="Single Analysis"
-            price="$25"
-            description="One-time analysis of any bill or collection notice"
+            name="Bill Analysis"
+            price="$9.99"
+            description="AI-powered medical bill & debt analysis"
             features={[
               "Complete bill error & overcharge analysis",
               "Dispute letter generation",
@@ -48,6 +48,20 @@ export default function PricingPage() {
               "100% money-back guarantee",
             ]}
             cta="Analyze My Bill"
+          />
+          <PricingCard
+            name="Credit Repair"
+            price="$25"
+            description="AI credit report analysis + personalized dispute letters"
+            features={[
+              "Full credit report AI analysis",
+              "Bureau dispute letters (Equifax, Experian, TransUnion)",
+              "Goodwill & pay-for-delete letters",
+              "FCRA violation detection",
+              "Personalized with your info — ready to mail",
+              "60-day money-back guarantee",
+            ]}
+            cta="Fix My Credit"
           />
           <PricingCard
             name="Unlimited Crusher"
