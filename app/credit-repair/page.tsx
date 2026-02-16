@@ -3,47 +3,75 @@
 import { useState, useEffect } from "react";
 import { useSession } from "next-auth/react";
 import FileUpload from "../components/FileUpload";
-import StateSelector from "../components/StateSelector";
-import AnalysisDisclaimer from "../components/AnalysisDisclaimer";
 import { useRouter } from "next/navigation";
 
-type Mode = "upload" | "paste" | "describe";
-type AccountType = "Collections" | "Late Payment" | "Charge-off" | "Bankruptcy" | "Inquiry" | "Other";
-
-interface NegativeItem {
-  id: string;
-  accountName: string;
-  accountType: AccountType;
-  balance: string;
-  dateOpened: string;
-  lastActivityDate: string;
-  status: string;
-  notes: string;
+interface UserInfo {
+  fullName: string;
+  streetAddress: string;
+  city: string;
+  state: string;
+  zipCode: string;
+  last4ssn: string;
 }
 
-function generateId() {
-  return Math.random().toString(36).slice(2, 10);
-}
-
-const emptyItem = (): NegativeItem => ({
-  id: generateId(),
-  accountName: "",
-  accountType: "Collections",
-  balance: "",
-  dateOpened: "",
-  lastActivityDate: "",
-  status: "",
-  notes: "",
-});
+const US_STATES = [
+  { code: "AL", name: "Alabama" },
+  { code: "AK", name: "Alaska" },
+  { code: "AZ", name: "Arizona" },
+  { code: "AR", name: "Arkansas" },
+  { code: "CA", name: "California" },
+  { code: "CO", name: "Colorado" },
+  { code: "CT", name: "Connecticut" },
+  { code: "DE", name: "Delaware" },
+  { code: "FL", name: "Florida" },
+  { code: "GA", name: "Georgia" },
+  { code: "HI", name: "Hawaii" },
+  { code: "ID", name: "Idaho" },
+  { code: "IL", name: "Illinois" },
+  { code: "IN", name: "Indiana" },
+  { code: "IA", name: "Iowa" },
+  { code: "KS", name: "Kansas" },
+  { code: "KY", name: "Kentucky" },
+  { code: "LA", name: "Louisiana" },
+  { code: "ME", name: "Maine" },
+  { code: "MD", name: "Maryland" },
+  { code: "MA", name: "Massachusetts" },
+  { code: "MI", name: "Michigan" },
+  { code: "MN", name: "Minnesota" },
+  { code: "MS", name: "Mississippi" },
+  { code: "MO", name: "Missouri" },
+  { code: "MT", name: "Montana" },
+  { code: "NE", name: "Nebraska" },
+  { code: "NV", name: "Nevada" },
+  { code: "NH", name: "New Hampshire" },
+  { code: "NJ", name: "New Jersey" },
+  { code: "NM", name: "New Mexico" },
+  { code: "NY", name: "New York" },
+  { code: "NC", name: "North Carolina" },
+  { code: "ND", name: "North Dakota" },
+  { code: "OH", name: "Ohio" },
+  { code: "OK", name: "Oklahoma" },
+  { code: "OR", name: "Oregon" },
+  { code: "PA", name: "Pennsylvania" },
+  { code: "RI", name: "Rhode Island" },
+  { code: "SC", name: "South Carolina" },
+  { code: "SD", name: "South Dakota" },
+  { code: "TN", name: "Tennessee" },
+  { code: "TX", name: "Texas" },
+  { code: "UT", name: "Utah" },
+  { code: "VT", name: "Vermont" },
+  { code: "VA", name: "Virginia" },
+  { code: "WA", name: "Washington" },
+  { code: "WV", name: "West Virginia" },
+  { code: "WI", name: "Wisconsin" },
+  { code: "WY", name: "Wyoming" }
+];
 
 export default function CreditRepairPage() {
   const router = useRouter();
   const { data: session, status } = useSession();
-  const [mode, setMode] = useState<Mode>("upload");
   const [loading, setLoading] = useState(false);
   const [loadingStatus, setLoadingStatus] = useState("");
-  const [state, setState] = useState("");
-  const [consented] = useState(true); // Consent already given at signup
 
   // Redirect to signin if not authenticated
   useEffect(() => {
@@ -53,72 +81,75 @@ export default function CreditRepairPage() {
     }
   }, [session, status, router]);
 
-  // Upload mode
+  // User information form
+  const [userInfo, setUserInfo] = useState<UserInfo>({
+    fullName: "",
+    streetAddress: "",
+    city: "",
+    state: "",
+    zipCode: "",
+    last4ssn: ""
+  });
+
+  // Upload functionality
   const [, setFile] = useState<File | null>(null);
   const [imageBase64, setImageBase64] = useState<string | null>(null);
   const [imageMimeType, setImageMimeType] = useState<string | null>(null);
 
-  // Paste mode
-  const [pastedText, setPastedText] = useState("");
+  // Load user info from sessionStorage on mount
+  useEffect(() => {
+    const savedUserInfo = sessionStorage.getItem("creditRepairUserInfo");
+    if (savedUserInfo) {
+      try {
+        setUserInfo(JSON.parse(savedUserInfo));
+      } catch (e) {
+        console.error("Failed to parse saved user info:", e);
+      }
+    }
+  }, []);
 
-  // Describe mode
-  const [items, setItems] = useState<NegativeItem[]>([emptyItem()]);
+  // Save user info to sessionStorage whenever it changes
+  useEffect(() => {
+    sessionStorage.setItem("creditRepairUserInfo", JSON.stringify(userInfo));
+  }, [userInfo]);
 
-  const addItem = () => setItems([...items, emptyItem()]);
-
-  const removeItem = (id: string) => {
-    if (items.length <= 1) return;
-    setItems(items.filter((i) => i.id !== id));
+  const updateUserInfo = (field: keyof UserInfo, value: string) => {
+    setUserInfo(prev => ({ ...prev, [field]: value }));
   };
 
-  const updateItem = (id: string, field: keyof NegativeItem, value: string) => {
-    setItems(items.map((i) => (i.id === id ? { ...i, [field]: value } : i)));
+  const isUserInfoComplete = () => {
+    return userInfo.fullName.trim() && 
+           userInfo.streetAddress.trim() && 
+           userInfo.city.trim() && 
+           userInfo.state && 
+           userInfo.zipCode.trim() && 
+           userInfo.last4ssn.trim().length === 4;
   };
 
   const handleAnalyze = async () => {
-    setLoading(true);
-    setLoadingStatus("Preparing your data...");
-    try {
-      let body: Record<string, unknown>;
+    if (!isUserInfoComplete()) {
+      alert("Please fill in all required information fields.");
+      return;
+    }
 
-      if (mode === "upload") {
-        if (!imageBase64) {
-          alert("Please upload a credit report image first.");
-          setLoading(false);
-          return;
-        }
-        setLoadingStatus("📸 Reading your credit report...");
-        body = {
-          input_type: "image",
-          image_base64: imageBase64,
-          image_mime_type: imageMimeType,
-          state,
-        };
-        setTimeout(() => setLoadingStatus("🔍 Analyzing negative items..."), 3000);
-        setTimeout(() => setLoadingStatus("📝 Generating dispute letters..."), 8000);
-      } else if (mode === "paste") {
-        setLoadingStatus("🔍 Analyzing your credit report...");
-        body = {
-          input_type: "text",
-          report_text: pastedText,
-          state,
-        };
-      } else {
-        setLoadingStatus("🔍 Analyzing your negative items...");
-        body = {
-          input_type: "manual",
-          items: items.map((i) => ({
-            account_name: i.accountName,
-            account_type: i.accountType,
-            balance: parseFloat(i.balance) || 0,
-            date_opened: i.dateOpened,
-            last_activity_date: i.lastActivityDate,
-            status: i.status,
-            notes: i.notes,
-          })),
-          state,
-        };
-      }
+    if (!imageBase64) {
+      alert("Please upload a credit report image first.");
+      return;
+    }
+
+    setLoading(true);
+    setLoadingStatus("📸 Reading your credit report...");
+    
+    try {
+      const body = {
+        input_type: "image",
+        image_base64: imageBase64,
+        image_mime_type: imageMimeType,
+        user_info: userInfo
+      };
+
+      setTimeout(() => setLoadingStatus("🔍 Analyzing negative items..."), 3000);
+      setTimeout(() => setLoadingStatus("📝 Generating personalized dispute letters..."), 8000);
 
       const res = await fetch("/api/credit-repair", {
         method: "POST",
@@ -141,10 +172,10 @@ export default function CreditRepairPage() {
             event: "analysis_complete",
             data: {
               type: "credit",
-              state: state || "Unknown",
-              mode: mode,
-              itemsCount: mode === "describe" ? items.filter(i => i.accountName.trim()).length : 1,
-              totalBalance: mode === "describe" ? items.reduce((sum, i) => sum + (parseFloat(i.balance) || 0), 0) : 0
+              state: userInfo.state,
+              mode: "upload",
+              itemsCount: data.items?.length || 0,
+              totalBalance: data.items?.reduce((sum: number, item: any) => sum + (item.balance || 0), 0) || 0
             },
             timestamp: new Date().toISOString()
           })
@@ -161,21 +192,6 @@ export default function CreditRepairPage() {
       setLoading(false);
     }
   };
-
-  const modes: { key: Mode; label: string; icon: string }[] = [
-    { key: "upload", label: "Upload Report", icon: "📤" },
-    { key: "paste", label: "Paste Text", icon: "📋" },
-    { key: "describe", label: "Add Items", icon: "✏️" },
-  ];
-
-  const canSubmit =
-    consented && (mode === "upload"
-      ? !!imageBase64
-      : mode === "paste"
-        ? !!pastedText.trim()
-        : items.some((i) => i.accountName.trim()));
-
-  const accountTypes: AccountType[] = ["Collections", "Late Payment", "Charge-off", "Bankruptcy", "Inquiry", "Other"];
 
   // Show loading screen while checking auth
   if (status === "loading") {
@@ -207,200 +223,127 @@ export default function CreditRepairPage() {
           </p>
         </div>
 
-        {/* Mode Selector */}
-        <div className="flex gap-2 mb-8 bg-slate-900 rounded-xl p-1">
-          {modes.map((m) => (
-            <button
-              key={m.key}
-              onClick={() => setMode(m.key)}
-              className={`flex-1 py-3 rounded-lg font-semibold text-sm transition-all ${
-                mode === m.key ? "bg-crusher-blue text-white" : "text-slate-400 hover:text-white"
-              }`}
-            >
-              {m.icon} {m.label}
-            </button>
-          ))}
-        </div>
-
-        {/* Disclaimer removed — consent given at account signup */}
-
         <div className="glass-strong rounded-2xl p-8 animate-fade-in-up-delay">
-          {/* State selector — only for manual/paste modes */}
-          {mode === "describe" && (
-            <div className="mb-6">
-              <label className="block text-white font-semibold mb-2">What state are you in?</label>
-              <StateSelector value={state} onChange={setState} />
-            </div>
-          )}
-
-          {/* Upload Mode */}
-          {mode === "upload" && (
-            <div className="space-y-6">
-              <p className="text-slate-400 text-sm text-center">Upload a screenshot or PDF of your credit report — our AI reads everything automatically.</p>
-              <FileUpload
-                label="Drop your credit report here"
-                onFile={(f, base64, mime) => {
-                  setFile(f);
-                  setImageBase64(base64);
-                  setImageMimeType(mime);
-                }}
-              />
-              <button
-                onClick={handleAnalyze}
-                disabled={loading || !imageBase64}
-                className="w-full bg-crusher-blue hover:bg-crusher-blue-dark disabled:opacity-50 text-white py-4 rounded-xl font-bold text-lg transition-all hover:scale-105"
-              >
-                {loading ? `⏳ ${loadingStatus}` : "⚡ Analyze Credit Report"}
-              </button>
-            </div>
-          )}
-
-          {/* Paste Mode */}
-          {mode === "paste" && (
-            <div className="space-y-6">
+          {/* User Information Form */}
+          <div className="mb-8">
+            <h2 className="text-xl font-bold text-white mb-6">Your Information</h2>
+            <p className="text-slate-400 text-sm mb-6">
+              This information will be used to pre-fill your dispute letters, making them ready to print and mail.
+            </p>
+            
+            <div className="space-y-4">
               <div>
-                <label className="block text-white font-semibold mb-2">Paste your credit report text</label>
-                <textarea
-                  value={pastedText}
-                  onChange={(e) => setPastedText(e.target.value)}
-                  rows={10}
-                  placeholder="Paste the full text of your credit report here. Include all accounts, balances, statuses, and any negative items..."
-                  className="w-full bg-slate-800 border border-slate-700 rounded-xl px-4 py-3 text-white placeholder-slate-500 focus:outline-none focus:border-crusher-blue transition-colors resize-none"
+                <label className="block text-white font-semibold mb-2">Full Name *</label>
+                <input
+                  type="text"
+                  value={userInfo.fullName}
+                  onChange={(e) => updateUserInfo("fullName", e.target.value)}
+                  placeholder="John Smith"
+                  className="w-full bg-slate-800 border border-slate-700 rounded-xl px-4 py-3 text-white placeholder-slate-500 focus:outline-none focus:border-crusher-blue transition-colors"
                 />
               </div>
-              <button
-                onClick={handleAnalyze}
-                disabled={loading || !canSubmit}
-                className="w-full bg-crusher-blue hover:bg-crusher-blue-dark disabled:opacity-50 text-white py-4 rounded-xl font-bold text-lg transition-all hover:scale-105"
-              >
-                {loading ? `⏳ ${loadingStatus}` : "⚡ Analyze Report"}
-              </button>
-            </div>
-          )}
 
-          {/* Describe Mode */}
-          {mode === "describe" && (
-            <div className="space-y-6">
-              {items.map((item, idx) => (
-                <div key={item.id} className="bg-slate-800/50 rounded-xl p-5 space-y-4 relative">
-                  <div className="flex items-center justify-between">
-                    <h3 className="text-white font-semibold text-sm">Negative Item #{idx + 1}</h3>
-                    {items.length > 1 && (
-                      <button
-                        onClick={() => removeItem(item.id)}
-                        className="text-slate-400 hover:text-crusher-red text-sm transition-colors"
-                      >
-                        ✕ Remove
-                      </button>
-                    )}
-                  </div>
+              <div>
+                <label className="block text-white font-semibold mb-2">Street Address *</label>
+                <input
+                  type="text"
+                  value={userInfo.streetAddress}
+                  onChange={(e) => updateUserInfo("streetAddress", e.target.value)}
+                  placeholder="123 Main Street"
+                  className="w-full bg-slate-800 border border-slate-700 rounded-xl px-4 py-3 text-white placeholder-slate-500 focus:outline-none focus:border-crusher-blue transition-colors"
+                />
+              </div>
 
-                  <div>
-                    <label className="block text-slate-300 text-sm mb-1">Account Name</label>
-                    <input
-                      type="text"
-                      value={item.accountName}
-                      onChange={(e) => updateItem(item.id, "accountName", e.target.value)}
-                      placeholder="e.g., Midland Credit Management, Capital One"
-                      className="w-full bg-slate-800 border border-slate-700 rounded-lg px-3 py-2.5 text-white placeholder-slate-500 focus:outline-none focus:border-crusher-blue transition-colors text-sm"
-                    />
-                  </div>
-
-                  <div>
-                    <label className="block text-slate-300 text-sm mb-1">Account Type</label>
-                    <div className="grid grid-cols-2 sm:grid-cols-3 gap-2">
-                      {accountTypes.map((t) => (
-                        <button
-                          key={t}
-                          onClick={() => updateItem(item.id, "accountType", t)}
-                          className={`py-2 px-3 rounded-lg text-xs font-semibold transition-all ${
-                            item.accountType === t
-                              ? "bg-crusher-blue text-white"
-                              : "bg-slate-700 text-slate-400 hover:text-white hover:bg-slate-600"
-                          }`}
-                        >
-                          {t}
-                        </button>
-                      ))}
-                    </div>
-                  </div>
-
-                  <div className="grid grid-cols-2 gap-4">
-                    <div>
-                      <label className="block text-slate-300 text-sm mb-1">Balance</label>
-                      <div className="relative">
-                        <span className="absolute left-3 top-1/2 -translate-y-1/2 text-slate-400 text-sm">$</span>
-                        <input
-                          type="number"
-                          value={item.balance}
-                          onChange={(e) => updateItem(item.id, "balance", e.target.value)}
-                          placeholder="0.00"
-                          className="w-full bg-slate-800 border border-slate-700 rounded-lg pl-7 pr-3 py-2.5 text-white placeholder-slate-500 focus:outline-none focus:border-crusher-blue transition-colors text-sm"
-                        />
-                      </div>
-                    </div>
-                    <div>
-                      <label className="block text-slate-300 text-sm mb-1">Status</label>
-                      <input
-                        type="text"
-                        value={item.status}
-                        onChange={(e) => updateItem(item.id, "status", e.target.value)}
-                        placeholder="e.g., Open, Closed, 60 days late"
-                        className="w-full bg-slate-800 border border-slate-700 rounded-lg px-3 py-2.5 text-white placeholder-slate-500 focus:outline-none focus:border-crusher-blue transition-colors text-sm"
-                      />
-                    </div>
-                  </div>
-
-                  <div className="grid grid-cols-2 gap-4">
-                    <div>
-                      <label className="block text-slate-300 text-sm mb-1">Date Opened</label>
-                      <input
-                        type="date"
-                        value={item.dateOpened}
-                        onChange={(e) => updateItem(item.id, "dateOpened", e.target.value)}
-                        className="w-full bg-slate-800 border border-slate-700 rounded-lg px-3 py-2.5 text-white focus:outline-none focus:border-crusher-blue transition-colors text-sm"
-                      />
-                    </div>
-                    <div>
-                      <label className="block text-slate-300 text-sm mb-1">Last Activity Date</label>
-                      <input
-                        type="date"
-                        value={item.lastActivityDate}
-                        onChange={(e) => updateItem(item.id, "lastActivityDate", e.target.value)}
-                        className="w-full bg-slate-800 border border-slate-700 rounded-lg px-3 py-2.5 text-white focus:outline-none focus:border-crusher-blue transition-colors text-sm"
-                      />
-                    </div>
-                  </div>
-
-                  <div>
-                    <label className="block text-slate-300 text-sm mb-1">Notes <span className="text-slate-500">(optional)</span></label>
-                    <textarea
-                      value={item.notes}
-                      onChange={(e) => updateItem(item.id, "notes", e.target.value)}
-                      rows={2}
-                      placeholder="Any additional info — dispute history, collector contact, etc."
-                      className="w-full bg-slate-800 border border-slate-700 rounded-lg px-3 py-2.5 text-white placeholder-slate-500 focus:outline-none focus:border-crusher-blue transition-colors text-sm resize-none"
-                    />
-                  </div>
+              <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+                <div>
+                  <label className="block text-white font-semibold mb-2">City *</label>
+                  <input
+                    type="text"
+                    value={userInfo.city}
+                    onChange={(e) => updateUserInfo("city", e.target.value)}
+                    placeholder="Columbus"
+                    className="w-full bg-slate-800 border border-slate-700 rounded-xl px-4 py-3 text-white placeholder-slate-500 focus:outline-none focus:border-crusher-blue transition-colors"
+                  />
                 </div>
-              ))}
+                
+                <div>
+                  <label className="block text-white font-semibold mb-2">State *</label>
+                  <select
+                    value={userInfo.state}
+                    onChange={(e) => updateUserInfo("state", e.target.value)}
+                    className="w-full bg-slate-800 border border-slate-700 rounded-xl px-4 py-3 text-white focus:outline-none focus:border-crusher-blue transition-colors"
+                  >
+                    <option value="">Select State</option>
+                    {US_STATES.map((state) => (
+                      <option key={state.code} value={state.code}>
+                        {state.name}
+                      </option>
+                    ))}
+                  </select>
+                </div>
+              </div>
 
-              <button
-                onClick={addItem}
-                className="w-full border-2 border-dashed border-slate-700 hover:border-crusher-blue text-slate-400 hover:text-crusher-blue py-3 rounded-xl font-semibold text-sm transition-all"
-              >
-                + Add Another Negative Item
-              </button>
-
-              <button
-                onClick={handleAnalyze}
-                disabled={loading || !canSubmit}
-                className="w-full bg-crusher-blue hover:bg-crusher-blue-dark disabled:opacity-50 text-white py-4 rounded-xl font-bold text-lg transition-all hover:scale-105"
-              >
-                {loading ? `⏳ ${loadingStatus}` : "⚡ Analyze & Generate Dispute Letters"}
-              </button>
+              <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+                <div>
+                  <label className="block text-white font-semibold mb-2">ZIP Code *</label>
+                  <input
+                    type="text"
+                    value={userInfo.zipCode}
+                    onChange={(e) => updateUserInfo("zipCode", e.target.value)}
+                    placeholder="43215"
+                    maxLength={5}
+                    className="w-full bg-slate-800 border border-slate-700 rounded-xl px-4 py-3 text-white placeholder-slate-500 focus:outline-none focus:border-crusher-blue transition-colors"
+                  />
+                </div>
+                
+                <div>
+                  <label className="block text-white font-semibold mb-2">Last 4 of SSN *</label>
+                  <input
+                    type="text"
+                    value={userInfo.last4ssn}
+                    onChange={(e) => {
+                      const value = e.target.value.replace(/\D/g, '');
+                      if (value.length <= 4) {
+                        updateUserInfo("last4ssn", value);
+                      }
+                    }}
+                    placeholder="1234"
+                    maxLength={4}
+                    className="w-full bg-slate-800 border border-slate-700 rounded-xl px-4 py-3 text-white placeholder-slate-500 focus:outline-none focus:border-crusher-blue transition-colors"
+                  />
+                </div>
+              </div>
             </div>
-          )}
+          </div>
+
+          {/* Upload Section */}
+          <div className="space-y-6">
+            <div>
+              <h2 className="text-xl font-bold text-white mb-4">Upload Your Credit Report</h2>
+              <p className="text-slate-400 text-sm mb-4">Upload a screenshot or PDF of your credit report — our AI reads everything automatically.</p>
+            </div>
+            
+            <FileUpload
+              label="Drop your credit report here"
+              onFile={(f, base64, mime) => {
+                setFile(f);
+                setImageBase64(base64);
+                setImageMimeType(mime);
+              }}
+            />
+            
+            <button
+              onClick={handleAnalyze}
+              disabled={loading || !imageBase64 || !isUserInfoComplete()}
+              className="w-full bg-crusher-blue hover:bg-crusher-blue-dark disabled:opacity-50 text-white py-4 rounded-xl font-bold text-lg transition-all hover:scale-105"
+            >
+              {loading ? `⏳ ${loadingStatus}` : "⚡ Analyze Credit Report"}
+            </button>
+            
+            {!isUserInfoComplete() && (
+              <p className="text-crusher-red text-sm text-center">Please fill in all required information fields above</p>
+            )}
+          </div>
         </div>
 
         {/* Get Your Free Credit Report */}

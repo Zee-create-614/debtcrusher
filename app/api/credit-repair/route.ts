@@ -53,14 +53,18 @@ Analyze the user's credit report data and return a JSON object with exactly this
 Rules:
 - Identify EVERY potentially disputable item
 - Classify each dispute type accurately: inaccuracy (wrong info), not_mine (identity issue), time_barred (past 7-year reporting limit), duplicate (same debt reported twice), obsolete (should have fallen off), mixed_file (someone else's info on report)
-- All dispute letters MUST:
-  - Be formal, professional, and ready to print and mail
+- ALL dispute letters MUST be READY TO PRINT AND MAIL with the user's actual information filled in:
+  - Use the user's actual name, address, city, state, zip code, and last 4 SSN provided
+  - Be formal, professional, and complete
   - Reference the Fair Credit Reporting Act (FCRA), 15 U.S.C. § 1681 et seq.
   - Include specific account details (account name, number if available, balance)
   - Request investigation and removal/correction
-  - Include today's date
-  - Include a placeholder for [YOUR NAME], [YOUR ADDRESS], [YOUR CITY, STATE ZIP], and [SSN LAST 4]
+  - Include today's date at the top
+  - Include the user's name and address in the "From" section
+  - Include the bureau's address in the "To" section
   - Reference the bureau's 30-day investigation requirement under FCRA § 1681i
+  - End with a signature line: "Signature: _______________" and "Printed Name: [user's actual name]"
+  - Include the last 4 SSN where needed for identification
 - Generate goodwill letters ONLY for late payment items (request removal as courtesy)
 - Generate pay-for-delete letters ONLY for collection items (offer to pay in exchange for deletion)
 - Confidence levels: high = clear violation/inaccuracy, medium = likely disputable, low = worth trying
@@ -94,7 +98,7 @@ export async function POST(request: Request) {
     return NextResponse.json({ error: "Invalid request body." }, { status: 400 });
   }
 
-  const { input_type, image_base64, image_mime_type, report_text, items, state } = body as {
+  const { input_type, image_base64, image_mime_type, report_text, items, state, user_info } = body as {
     input_type?: string;
     image_base64?: string;
     image_mime_type?: string;
@@ -109,6 +113,14 @@ export async function POST(request: Request) {
       notes: string;
     }>;
     state?: string;
+    user_info?: {
+      fullName: string;
+      streetAddress: string;
+      city: string;
+      state: string;
+      zipCode: string;
+      last4ssn: string;
+    };
   };
 
   const client = new Anthropic({ apiKey });
@@ -202,9 +214,16 @@ export async function POST(request: Request) {
     return NextResponse.json({ error: "No credit report data provided." }, { status: 400 });
   }
 
-  const userMessage = `Please analyze this credit report data and identify all disputable items. Generate dispute letters for each.
+  const userMessage = `Please analyze this credit report data and identify all disputable items. Generate dispute letters for each using the consumer's actual information.
 
-CONSUMER'S STATE: ${state || "Unknown"}
+CONSUMER INFORMATION:
+Name: ${user_info?.fullName || "[Name not provided]"}
+Address: ${user_info?.streetAddress || "[Address not provided]"}
+City: ${user_info?.city || "[City not provided]"}
+State: ${user_info?.state || state || "[State not provided]"}
+ZIP: ${user_info?.zipCode || "[ZIP not provided]"}
+Last 4 SSN: ${user_info?.last4ssn || "[SSN not provided]"}
+
 TODAY'S DATE: ${new Date().toLocaleDateString("en-US", { year: "numeric", month: "long", day: "numeric" })}
 
 CREDIT REPORT DATA:
