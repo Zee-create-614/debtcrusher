@@ -12,9 +12,9 @@ export default function AuthNavLink() {
   return (
     <a 
       href="/account" 
-      className="text-slate-300 hover:text-white transition-colors text-sm font-medium"
+      className="bg-crusher-blue hover:bg-crusher-blue-dark text-white px-4 py-2 rounded-lg text-sm font-bold transition-all hover:scale-105"
     >
-      My Dashboard
+      ⚡ My Dashboard
     </a>
   )
 }
