@@ -87,38 +87,123 @@ export default function CreditRepairResultsPage() {
   const [savedToAccount, setSavedToAccount] = useState(false);
 
   useEffect(() => {
+    // Check for unlock parameters from successful payment first
+    const urlParams = new URLSearchParams(window.location.search);
+    const unlocked = urlParams.get('unlocked');
+    if (unlocked === 'letters') {
+      setLettersUnlocked(true);
+      // Update server-side unlock status
+      if (session?.user?.email) {
+        updateUnlockStatus(true);
+      }
+      // Clean up URL
+      const newUrl = window.location.pathname;
+      window.history.replaceState({}, '', newUrl);
+    }
+
+    // Try to load from sessionStorage first
     const stored = sessionStorage.getItem("creditRepairResults");
     if (stored) {
       try {
         const parsed = JSON.parse(stored);
         if (parsed.error || !parsed.items) {
-          setResults(null);
+          // sessionStorage is empty/invalid, try to load from server
+          if (session?.user?.email) {
+            loadFromServer();
+          } else {
+            setResults(null);
+          }
           return;
         }
         setResults(parsed);
 
         // Auto-save if user is logged in
         if (session?.user?.email) {
+          saveToServer(parsed);
           saveToAccount(parsed);
         } else {
           // Show account prompt after 3 seconds if not logged in
           setTimeout(() => setShowAccountPrompt(true), 3000);
         }
       } catch {
-        setResults(null);
+        // sessionStorage parsing failed, try server if authenticated
+        if (session?.user?.email) {
+          loadFromServer();
+        } else {
+          setResults(null);
+        }
       }
-    }
-    
-    // Check for unlock parameters from successful payment
-    const urlParams = new URLSearchParams(window.location.search);
-    const unlocked = urlParams.get('unlocked');
-    if (unlocked === 'letters') {
-      setLettersUnlocked(true);
-      // Clean up URL
-      const newUrl = window.location.pathname;
-      window.history.replaceState({}, '', newUrl);
+    } else if (session?.user?.email) {
+      // No sessionStorage data, try to load from server
+      loadFromServer();
     }
   }, [session]);
+
+  const saveToServer = async (analysisData?: CreditRepairResult) => {
+    if (!session?.user?.email) return;
+    
+    const dataToSave = analysisData || results;
+    if (!dataToSave) return;
+
+    try {
+      await fetch('/api/user/credit-repair-results', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify({
+          results: dataToSave,
+        }),
+      });
+    } catch (error) {
+      console.error('Failed to save results to server:', error);
+    }
+  };
+
+  const loadFromServer = async () => {
+    if (!session?.user?.email) return;
+
+    try {
+      const response = await fetch('/api/user/credit-repair-results');
+      if (response.ok) {
+        const data = await response.json();
+        setResults(data.results);
+        setLettersUnlocked(data.unlocked || false);
+        
+        // Also save to sessionStorage for immediate access
+        sessionStorage.setItem("creditRepairResults", JSON.stringify(data.results));
+        
+        // Auto-save to account if not already saved
+        if (data.results) {
+          saveToAccount(data.results);
+        }
+      } else if (response.status === 404) {
+        // No saved results found
+        setResults(null);
+      }
+    } catch (error) {
+      console.error('Failed to load results from server:', error);
+      setResults(null);
+    }
+  };
+
+  const updateUnlockStatus = async (unlocked: boolean) => {
+    if (!session?.user?.email) return;
+
+    try {
+      await fetch('/api/user/credit-repair-results', {
+        method: 'PATCH',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify({
+          unlocked,
+        }),
+      });
+    } catch (error) {
+      console.error('Failed to update unlock status:', error);
+    }
+  };
 
   const saveToAccount = async (analysisData?: CreditRepairResult) => {
     if (!session?.user?.email) return;
@@ -161,6 +246,11 @@ export default function CreditRepairResultsPage() {
       return;
     }
 
+    // Save results to server before redirecting to checkout
+    if (results) {
+      await saveToServer(results);
+    }
+
     try {
       // Track credit letters unlock intent
       try {
@@ -189,7 +279,7 @@ export default function CreditRepairResultsPage() {
           product: 'credit_repair_unlock',
           amount: 999, // $9.99 in cents
           description: `Unlock All ${allLetters.length} Dispute Letters - DebtCrusher.ai`,
-          successUrl: `${window.location.origin}/checkout/success?product=credit_repair_unlock`,
+          successUrl: `${window.location.origin}/credit-repair/results?unlocked=letters`,
           cancelUrl: `${window.location.origin}/checkout/cancel`,
         }),
       });

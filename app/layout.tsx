@@ -3,6 +3,7 @@ import "./globals.css";
 import TawkWidget from "./components/TawkWidget";
 import Providers from "./components/Providers";
 import AuthButton from "./components/AuthButton";
+import AuthNavLink from "./components/AuthNavLink";
 
 export const metadata: Metadata = {
   title: "DebtCrusher.ai — Crush Your Medical Bills & Collections",
@@ -47,6 +48,7 @@ export default function RootLayout({
                   <a href="/verify" className="text-slate-300 hover:text-white transition-colors text-sm font-medium">Verify Results</a>
                   <a href="/pricing" className="text-slate-300 hover:text-white transition-colors text-sm font-medium">Pricing</a>
                   <a href="/about" className="text-slate-300 hover:text-white transition-colors text-sm font-medium">About</a>
+                  <AuthNavLink />
                   <AuthButton />
                 </div>
                 <div className="md:hidden flex items-center gap-2">
