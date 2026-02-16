@@ -168,7 +168,7 @@ export default function AnalyzePage() {
           ))}
         </div>
 
-        {/* Disclaimer removed — consent given at account signup */}
+        {/* Disclaimer removed  consent given at account signup */}
 
         <div className="glass-strong rounded-2xl p-8 animate-fade-in-up-delay">
           {/* Upload Mode */}
