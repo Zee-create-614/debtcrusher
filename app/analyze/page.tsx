@@ -1,24 +1,23 @@
 "use client";
 
-import { useState, useEffect } from "react";
-import { useSession } from "next-auth/react";
+import { useState } from "react";
+import { useSession, signIn } from "next-auth/react";
 import FileUpload from "../components/FileUpload";
 import StateSelector from "../components/StateSelector";
 import { useRouter } from "next/navigation";
 
+declare global {
+  interface Window {
+    gtag: (...args: any[]) => void;
+  }
+}
+
 export default function AnalyzePage() {
   const router = useRouter();
-  const { data: session, status } = useSession();
+  const { data: session } = useSession();
   const [loading, setLoading] = useState(false);
   const [loadingStatus, setLoadingStatus] = useState("");
-
-  // Redirect to signin if not authenticated
-  useEffect(() => {
-    if (status === "loading") return; // Still loading
-    if (!session) {
-      router.push("/auth/signin?callbackUrl=/analyze");
-    }
-  }, [session, status, router]);
+  const [showSignupPrompt, setShowSignupPrompt] = useState(false);
 
   // User info fields
   const [fullName, setFullName] = useState("");
@@ -41,6 +40,12 @@ export default function AnalyzePage() {
     // Validate required user info fields
     if (!fullName || !streetAddress || !city || !state || !zipCode) {
       alert("Please fill in all required fields: Full Name, Street Address, City, State, and ZIP Code.");
+      return;
+    }
+
+    // Check authentication only when submitting
+    if (!session) {
+      setShowSignupPrompt(true);
       return;
     }
 
@@ -80,8 +85,9 @@ export default function AnalyzePage() {
         return;
       }
 
-      // Track analysis completion
+      // Track analysis completion - Google Ads conversion
       try {
+        // Internal analytics
         await fetch("/api/analytics/track", {
           method: "POST",
           headers: { "Content-Type": "application/json" },
@@ -98,6 +104,15 @@ export default function AnalyzePage() {
             timestamp: new Date().toISOString()
           })
         });
+
+        // Google Ads conversion tracking
+        if (typeof window !== 'undefined' && window.gtag) {
+          window.gtag('event', 'conversion', {
+            'send_to': 'AW-17957953316/analysis_complete',
+            'value': data.savings_found || 0,
+            'currency': 'USD'
+          });
+        }
       } catch (error) {
         console.error("Failed to track analytics:", error);
       }
@@ -111,23 +126,15 @@ export default function AnalyzePage() {
     }
   };
 
-  // Show loading screen while checking auth
-  if (status === "loading") {
-    return (
-      <div className="min-h-screen flex items-center justify-center">
-        <div className="text-white">Loading...</div>
-      </div>
-    );
-  }
+  // Handle signup prompt
+  const handleSignup = () => {
+    signIn(undefined, { callbackUrl: "/analyze" });
+  };
 
-  // If not authenticated, will redirect via useEffect
-  if (!session) {
-    return (
-      <div className="min-h-screen flex items-center justify-center">
-        <div className="text-white">Redirecting to sign in...</div>
-      </div>
-    );
-  }
+  const handleSignupLater = () => {
+    setShowSignupPrompt(false);
+    alert("Sign up required to complete analysis. Your form data will be saved when you return!");
+  };
 
   return (
     <div className="min-h-screen py-12">
@@ -238,6 +245,35 @@ export default function AnalyzePage() {
           <span>⚖️ HIPAA compliant</span>
         </div>
       </div>
+
+      {/* Signup Prompt Modal */}
+      {showSignupPrompt && (
+        <div className="fixed inset-0 bg-black/80 flex items-center justify-center z-50 p-4">
+          <div className="glass-strong rounded-2xl p-8 max-w-md w-full animate-fade-in-up">
+            <h3 className="text-2xl font-bold text-white mb-4 text-center">Almost There! 🎯</h3>
+            <p className="text-slate-300 mb-6 text-center">
+              Create a free account to complete your bill analysis and get your personalized dispute letters.
+            </p>
+            <div className="space-y-3">
+              <button
+                onClick={handleSignup}
+                className="w-full bg-crusher-blue hover:bg-crusher-blue-dark text-white py-3 rounded-xl font-bold transition-all hover:scale-105"
+              >
+                Create Free Account →
+              </button>
+              <button
+                onClick={handleSignupLater}
+                className="w-full bg-slate-700 hover:bg-slate-600 text-white py-3 rounded-xl font-medium transition-all"
+              >
+                Maybe Later
+              </button>
+            </div>
+            <p className="text-slate-400 text-xs text-center mt-4">
+              ✅ No spam • ⚡ Instant access • 🔒 Secure
+            </p>
+          </div>
+        </div>
+      )}
     </div>
   );
 }

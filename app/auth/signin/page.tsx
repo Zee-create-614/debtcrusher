@@ -74,6 +74,13 @@ function SignInInner() {
               timestamp: new Date().toISOString()
             })
           });
+
+          // Google Ads conversion tracking
+          if (typeof window !== 'undefined' && (window as any).gtag) {
+            (window as any).gtag('event', 'conversion', {
+              'send_to': 'AW-17957953316/signup',
+            });
+          }
         } catch {}
       }
     } catch (err) {

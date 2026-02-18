@@ -21,13 +21,18 @@ export default function Home() {
             <p className="text-lg md:text-xl text-slate-400 mb-8 max-w-2xl mx-auto">
               AI-powered bill analysis, collections defense, and credit repair — all in one place. Upload a bill or credit report and our AI does the rest.
             </p>
-            <div className="flex flex-col sm:flex-row gap-4 justify-center mb-8">
-              <a href="/analyze" className="bg-crusher-blue hover:bg-crusher-blue-dark text-white px-8 py-4 rounded-xl font-bold text-lg transition-all hover:scale-105 animate-pulse-glow">
-                Analyze My Bill Free →
+            <div className="flex flex-col items-center gap-4 mb-8">
+              <a href="/analyze" className="bg-crusher-blue hover:bg-crusher-blue-dark text-white px-12 py-5 rounded-xl font-black text-xl transition-all hover:scale-105 animate-pulse-glow shadow-2xl shadow-crusher-blue/25">
+                📤 Upload Your Bill Now — Free to Try
               </a>
-              <a href="/credit-repair" className="bg-crusher-green hover:bg-green-600 text-white px-8 py-4 rounded-xl font-bold text-lg transition-all hover:scale-105">
-                Analyze My Credit Free →
-              </a>
+              <div className="flex flex-col sm:flex-row gap-3">
+                <a href="/analyze" className="text-crusher-blue hover:text-white border border-crusher-blue hover:bg-crusher-blue px-6 py-3 rounded-xl font-bold transition-all hover:scale-105">
+                  Analyze Medical Bill
+                </a>
+                <a href="/credit-repair" className="text-crusher-green hover:text-white border border-crusher-green hover:bg-crusher-green px-6 py-3 rounded-xl font-bold transition-all hover:scale-105">
+                  Fix My Credit
+                </a>
+              </div>
             </div>
             <MoneyBackBadge />
           </div>
@@ -165,32 +170,32 @@ export default function Home() {
           <p className="text-slate-400 text-center mb-16 max-w-xl mx-auto">No hidden fees. No subscriptions required. Pay only if we find savings.</p>
           <div className="grid grid-cols-1 md:grid-cols-2 gap-8 max-w-4xl mx-auto">
             <PricingCard
-              name="Single Analysis"
-              price="$25"
-              description="One-time bill analysis with full report"
+              name="Bill Analysis"
+              price="$9.99"
+              description="AI-powered medical bill & debt analysis"
               features={[
-                "Complete bill error analysis",
+                "Complete bill error & overcharge analysis",
                 "Dispute letter generation",
-                "Settlement recommendation",
-                "Negotiation script",
-                "100% refund if no savings found",
+                "Settlement recommendation & letter",
+                "Negotiation script with talking points",
+                "Statute of limitations check",
+                "100% money-back guarantee",
               ]}
               cta="Analyze My Bill"
             />
             <PricingCard
-              name="Unlimited Crusher"
-              price="$49"
-              period="/month"
-              description="Unlimited analyses + full collections defense"
+              name="Credit Repair"
+              price="$25"
+              description="AI credit report analysis + personalized dispute letters"
               features={[
-                "Everything in Single Analysis",
-                "Unlimited bill analyses",
-                "Collections defense toolkit",
-                "FDCPA violation monitoring",
-                "Credit bureau dispute letters",
-                "Priority AI processing",
+                "Full credit report AI analysis",
+                "Bureau dispute letters (Equifax, Experian, TransUnion)",
+                "Goodwill & pay-for-delete letters",
+                "FCRA violation detection",
+                "Personalized with your info — ready to mail",
+                "60-day money-back guarantee",
               ]}
-              cta="Start Crushing"
+              cta="Fix My Credit"
               highlighted
               badge="MOST POPULAR"
             />
